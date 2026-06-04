@@ -18,11 +18,8 @@ RUN go mod download
 # Copy backend source tree
 COPY backend/ ./
 
-# Dynamic multi-arch cross-compilation using Docker Buildx platforms
-ARG TARGETOS
-ARG TARGETARCH
-RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -ldflags="-s -w" -o /app/server cmd/server/main.go
+# Compiles the binary natively inside the target architecture context (CGO and musl required for SQLite)
+RUN CGO_ENABLED=1 go build -ldflags="-s -w" -o /app/server cmd/server/main.go
 
 # ==========================================
 # STAGE 2: Minimal Runtime
