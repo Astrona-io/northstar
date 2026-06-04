@@ -18,6 +18,13 @@ import (
 // InitTelemetry initializes standard OpenTelemetry TracerProvider and registers it globally.
 // It returns a shutdown cleanup function to flush traces on server termination.
 func InitTelemetry(ctx context.Context) (func(), error) {
+	// Only initialize and export traces if explicitly enabled or if OTLP endpoint env is set.
+	// This mutes background warning connection refused logs in standard local environments.
+	if os.Getenv("OTEL_ENABLED") != "true" && os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" {
+		log.Println("[OTel Engine] OpenTelemetry is currently disabled. To enable APM tracing, set OTEL_ENABLED=true.")
+		return func() {}, nil
+	}
+
 	serviceName := os.Getenv("OTEL_SERVICE_NAME")
 	if serviceName == "" {
 		serviceName = "northstar-cmdb"

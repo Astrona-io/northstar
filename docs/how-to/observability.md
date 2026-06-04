@@ -35,6 +35,7 @@ To customize or activate full tracing, configure the following environment varia
 
 | Environment Variable | Recommended Value | Purpose |
 |----------------------|-------------------|---------|
+| `OTEL_ENABLED` | `true` | Explicitly enables OpenTelemetry trace exporting (disabled by default to keep local terminals silent). |
 | `OTEL_SERVICE_NAME` | `northstar-cmdb` | Identifies this service inside your APM dashboard. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `localhost:4318` | The OTLP HTTP receiver host and port. |
 | `OTEL_EXPORTER_OTLP_INSECURE` | `true` | Allows unencrypted HTTP connections for local testing. |
@@ -46,6 +47,7 @@ To customize or activate full tracing, configure the following environment varia
 If you are using our `justfile` shortcuts, start the backend with the required environment variables:
 
 ```bash
+OTEL_ENABLED="true" \
 OTEL_SERVICE_NAME="northstar-cmdb" \
 OTEL_EXPORTER_OTLP_ENDPOINT="localhost:4318" \
 OTEL_EXPORTER_OTLP_INSECURE="true" \

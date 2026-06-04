@@ -55,10 +55,26 @@
     </header>
 
     <!-- Main Workspace Area -->
-    <div class="flex flex-grow min-h-0">
+    <div class="flex flex-grow min-h-0 relative">
       
-      <!-- Left Panel: Mode Selector -->
-      <aside class="w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col justify-between flex-shrink-0">
+      <!-- Floating Sidebar Toggle Button (Phase 2 CAD Draw Updates) -->
+      <div class="absolute top-4 left-4 z-20">
+        <UButton 
+          :icon="isLeftPanelCollapsed ? 'i-heroicons-bars-3' : 'i-heroicons-chevron-left'" 
+          color="gray" 
+          variant="ghost" 
+          size="xs" 
+          @click="isLeftPanelCollapsed = !isLeftPanelCollapsed"
+          class="bg-slate-900/90 backdrop-blur border border-slate-800 shadow-lg text-slate-300 hover:bg-slate-800"
+          :title="isLeftPanelCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
+        />
+      </div>
+
+      <!-- Left Panel: Mode Selector (Phase 2 Collapsible Sidebar) -->
+      <aside 
+        class="bg-slate-900 flex flex-col justify-between flex-shrink-0 transition-all duration-300 ease-in-out"
+        :class="isLeftPanelCollapsed ? 'w-0 border-r-0 p-0 overflow-hidden' : 'w-64 border-r border-slate-800 p-4'"
+      >
         <div class="space-y-6">
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Drafting Modes</span>
@@ -124,9 +140,51 @@
 
       <!-- Center Panel: The Expanded SVG Canvas -->
       <main class="flex-grow bg-slate-950 p-6 flex items-center justify-center overflow-auto relative">
+        <!-- Floating Zoom Controls (Phase 2 CAD Draw Updates) -->
+        <div class="absolute top-4 right-4 z-20 flex items-center gap-1.5 bg-slate-900/90 backdrop-blur border border-slate-800 p-1.5 rounded-md shadow-lg select-none">
+          <UButton 
+            icon="i-heroicons-minus" 
+            color="gray" 
+            variant="ghost" 
+            size="xs" 
+            @click="decreaseZoom"
+            :disabled="zoomScale <= 0.5"
+            class="hover:bg-slate-800 text-slate-300"
+          />
+          <span class="text-[10px] font-mono text-slate-400 w-12 text-center select-none font-bold">
+            {{ Math.round(zoomScale * 100) }}%
+          </span>
+          <UButton 
+            icon="i-heroicons-plus" 
+            color="gray" 
+            variant="ghost" 
+            size="xs" 
+            @click="increaseZoom"
+            :disabled="zoomScale >= 2.5"
+            class="hover:bg-slate-800 text-slate-300"
+          />
+          <div class="h-4 w-px bg-slate-800 mx-1" />
+          <UButton 
+            icon="i-heroicons-arrows-pointing-out" 
+            color="gray" 
+            variant="ghost" 
+            size="xs" 
+            @click="resetZoom"
+            title="Reset to 100%"
+            class="hover:bg-slate-800 text-slate-300"
+          />
+        </div>
+
         <div 
-          class="bg-slate-900 rounded-lg border-2 border-slate-800 shadow-2xl relative overflow-hidden flex-shrink-0"
-          style="width: 800px; height: 500px;"
+          class="bg-slate-900 rounded-lg border-2 border-slate-800 shadow-2xl relative overflow-hidden transition-all duration-150 flex-shrink-0"
+          :style="{
+            width: '100%',
+            height: '100%',
+            maxWidth: '1200px',
+            maxHeight: '750px',
+            transform: `scale(${zoomScale})`,
+            transformOrigin: 'center center'
+          }"
         >
           <!-- Grid Canvas SVG (Double scale for precision drawing workspace) -->
           <svg 
@@ -331,11 +389,31 @@ watch(activeFloor, (newFloor) => {
 
 // Drawing state variables
 const canvasSvg = ref(null)
+const isLeftPanelCollapsed = ref(true)
 const draggedRackId = ref(null)
 const dragOffset = ref({ x: 0, y: 0 })
 const cadToolMode = ref('racks') // 'racks' or 'walls'
 const wallDraftStart = ref(null)
 const wallDraftCurrent = ref(null)
+
+// Zoom controls (Phase 2 CAD Draw Updates)
+const zoomScale = ref(1.0)
+
+const increaseZoom = () => {
+  if (zoomScale.value < 2.5) {
+    zoomScale.value = parseFloat((zoomScale.value + 0.1).toFixed(1))
+  }
+}
+
+const decreaseZoom = () => {
+  if (zoomScale.value > 0.5) {
+    zoomScale.value = parseFloat((zoomScale.value - 0.1).toFixed(1))
+  }
+}
+
+const resetZoom = () => {
+  zoomScale.value = 1.0
+}
 
 // Auto-save & idle timers
 const saveTimer = ref(null)

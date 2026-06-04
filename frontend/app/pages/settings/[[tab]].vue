@@ -402,88 +402,34 @@
         </div>
 
         <!-- Tab 3 Sub-Page: Datacenters & Racks Administration (Phase 3 Connection speeds integration) -->
-        <div v-if="activeTab === 'dcim'" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <!-- Left Panel: Create Forms -->
-          <div class="space-y-6">
-            <!-- Create Datacenter Card -->
-            <UCard v-if="canMutate">
-              <template #header>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">Deploy New Location Profile</h4>
-              </template>
-              <form @submit.prevent="registerDatacenter" class="space-y-3">
-                <div class="grid grid-cols-2 gap-3">
-                  <UFormGroup label="Location Name" class="text-xs font-semibold">
-                    <UInput v-model="newDcForm.name" placeholder="e.g. Dublin-HQ" required />
-                  </UFormGroup>
-                  <UFormGroup label="Datacenter Type" class="text-xs font-semibold">
-                    <USelect v-model="newDcForm.type" :options="['on-prem', 'homelab', 'air-gap', 'cloud:aws', 'cloud:gcp', 'cloud:azure']" required />
-                  </UFormGroup>
-                  <UFormGroup label="Country Location" class="text-xs font-semibold">
-                    <UInput v-model="newDcForm.country" placeholder="e.g. Ireland" />
-                  </UFormGroup>
-                  <UFormGroup label="City Location" class="text-xs font-semibold">
-                    <UInput v-model="newDcForm.city" placeholder="e.g. Dublin" />
-                  </UFormGroup>
-                  <!-- Connection Speeds parameters -->
-                  <UFormGroup label="Uplink Connection Speed" class="text-xs font-semibold">
-                    <UInput v-model="newDcForm.uplink_speed" placeholder="e.g. 2.5 Gbps Fiber, AWS Elastic" />
-                  </UFormGroup>
-                  <UFormGroup label="Location Public IP Gate" class="text-xs font-semibold">
-                    <UInput v-model="newDcForm.public_ip" placeholder="e.g. 85.12.85.112" />
-                  </UFormGroup>
-                </div>
-                <div class="flex justify-end pt-2">
-                  <UButton type="submit" :loading="isSavingDc" size="sm" icon="i-heroicons-plus" color="primary">
-                    Deploy Datacenter Profile
-                  </UButton>
-                </div>
-              </form>
-            </UCard>
-
-            <!-- Create Cabinet Card -->
-            <UCard v-if="canMutate">
-              <template #header>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">Deploy Server Rack Cabinet Frame</h4>
-              </template>
-              <form @submit.prevent="registerRack" class="space-y-3">
-                <div class="grid grid-cols-2 gap-3">
-                  <UFormGroup label="Target Parent Location" class="text-xs font-semibold">
-                    <USelect 
-                      v-model="newRackForm.datacenter_id" 
-                      :options="dcDropdownOptions" 
-                      option-attribute="label" 
-                      value-attribute="value" 
-                      required 
-                    />
-                  </UFormGroup>
-                  <UFormGroup label="Cabinet Name" class="text-xs font-semibold">
-                    <UInput v-model="newRackForm.name" placeholder="e.g. Rack-B04" required />
-                  </UFormGroup>
-                  <UFormGroup label="Cabinet Height (U Units)" class="text-xs font-semibold">
-                    <UInput type="number" v-model="newRackForm.height_u" placeholder="42" min="1" max="100" />
-                  </UFormGroup>
-                </div>
-                <div class="flex justify-end pt-2">
-                  <UButton type="submit" :loading="isSavingRack" size="sm" icon="i-heroicons-plus" color="primary">
-                    Deploy Cabinet Frame
-                  </UButton>
-                </div>
-              </form>
-            </UCard>
+        <div v-if="activeTab === 'dcim'" class="space-y-6">
+          <!-- Create Datacenter Action Row -->
+          <div v-if="canMutate" class="flex justify-between items-center bg-slate-50 dark:bg-slate-800/40 p-4 rounded-md border border-slate-150 dark:border-slate-800 shadow-sm">
+            <div>
+              <span class="text-xs font-bold text-slate-900 dark:text-white block font-mono uppercase tracking-wider">Location Management</span>
+              <span class="text-[10px] text-slate-400 mt-0.5 block">Deploy and manage physical or cloud-native facility profiles.</span>
+            </div>
+            <UButton 
+              icon="i-heroicons-plus" 
+              color="primary" 
+              size="sm" 
+              @click="isCreateDcModalOpen = true"
+            >
+              Deploy New Location Profile
+            </UButton>
           </div>
 
-          <!-- Right Panel: Active Infrastructure Location list & 2D Designer Accordion -->
-          <div class="space-y-4">
-            <UCard>
-              <template #header>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">Deployed DCIM Location Node Matrix</h4>
-              </template>
+          <!-- Active Infrastructure Location list & 2D Designer Accordion -->
+          <UCard>
+            <template #header>
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">Deployed DCIM Location Node Matrix</h4>
+            </template>
 
-              <div v-if="pendingDatacenters" class="flex justify-center p-6">
-                <UIcon name="i-heroicons-arrow-path" class="animate-spin h-8 w-8 text-primary-500" />
-              </div>
+            <div v-if="pendingDatacenters" class="flex justify-center p-6">
+              <UIcon name="i-heroicons-arrow-path" class="animate-spin h-8 w-8 text-primary-500" />
+            </div>
 
-              <div v-else class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+            <div v-else class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
                 <div 
                   v-for="dc in datacenters" 
                   :key="dc.id" 
@@ -1080,77 +1026,51 @@
               </div>
               </div>
 
-              <!-- Full-Width visual Tree-Graph Taxonomy Dependency chains card (Phase 1 Taxonomy Tree-Graph Visualizer) -->
-              <UCard class="mt-6">
-                <template #header>
-                  <div class="flex items-center gap-2">
-                    <UIcon name="i-heroicons-share" class="h-5 w-5 text-primary-500" />
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">
-                      Dynamic Taxonomy Dependency Graph map
-                    </h4>
-                  </div>
-                </template>
-
-                <div class="p-4 space-y-6">
-                  <p class="text-[11px] text-slate-500 leading-relaxed font-sans max-w-3xl">
-                    The visualization map below renders active GORM Category prerequisite dependency chains. Root nodes are listed on the left, mapping directly to child dynamic categories on the right via relational connection lines. Glowing nodes represent live database hardware asset counts.
-                  </p>
-
-                  <!-- Visual Tree Connector Flow List -->
-                  <div class="space-y-6 max-w-4xl">
-                    <div 
-                      v-for="root in rootCategories" 
-                      :key="root.id" 
-                      class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center relative"
-                    >
-                      <!-- Left Node (Parent/Root category) -->
-                      <div class="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm relative z-10 w-full md:w-80">
-                        <UIcon :name="root.icon || 'i-heroicons-squares-2x2'" class="h-6 w-6 text-primary-500" />
-                        <div class="flex-1">
-                          <span class="text-xs font-bold text-slate-900 dark:text-white block font-mono">{{ root.name.toUpperCase() }}</span>
-                          <span class="text-[10px] text-slate-400 mt-0.5 block truncate max-w-[180px]">{{ root.description }}</span>
-                        </div>
-                        <!-- Glowing live GORM count -->
-                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 font-bold flex items-center gap-1">
-                          <span class="h-1.5 w-1.5 rounded-full bg-green-500 animate-ping"></span>
-                          {{ getCategoryAssetCount(root.name) }} Nodes
-                        </span>
-                      </div>
-
-                      <!-- Right Nodes (Prerequisite child categories) -->
-                      <div v-if="getChildCategories(root.name).length > 0" class="pl-0 md:pl-12 space-y-3 relative">
-                        <!-- Horizontal styled connector cable lines -->
-                        <div class="hidden md:block absolute -left-6 top-1/2 -translate-y-1/2 w-6 border-b border-dashed border-primary-500/50"></div>
-                        <div class="hidden md:block absolute -left-6 top-4 bottom-4 border-l border-dashed border-primary-500/50"></div>
-
-                        <div 
-                          v-for="child in getChildCategories(root.name)" 
-                          :key="child.id" 
-                          class="flex items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm relative z-10 w-full md:w-80"
-                        >
-                          <UIcon :name="child.icon || 'i-heroicons-squares-2x2'" class="h-5 w-5 text-indigo-500" />
-                          <div class="flex-1">
-                            <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 block font-mono">{{ child.name.toUpperCase() }}</span>
-                            <span class="text-[9px] text-slate-400 mt-0.5 block">Prereq: {{ child.parent_dependency }}</span>
-                          </div>
-                          <!-- Glowing live count for child category -->
-                          <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 font-bold">
-                            {{ getCategoryAssetCount(child.name) }} Nodes
-                          </span>
-                        </div>
-                      </div>
-
-                      <div v-else class="text-[10px] text-slate-400 italic pl-0 md:pl-12">
-                        No nested prerequisite category dependencies.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </UCard>
-
-              </div>
-
     </div>
+
+    <!-- Deploy New Location Profile Modal -->
+    <UModal v-model="isCreateDcModalOpen">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-globe-alt" class="h-5 w-5 text-primary-500" />
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">Deploy New Location Profile</h4>
+            </div>
+            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" class="-my-1" @click="isCreateDcModalOpen = false" />
+          </div>
+        </template>
+        <form @submit.prevent="registerDatacenter" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <UFormGroup label="Location Name" class="text-xs font-semibold">
+              <UInput v-model="newDcForm.name" placeholder="e.g. Dublin-HQ" required />
+            </UFormGroup>
+            <UFormGroup label="Datacenter Type" class="text-xs font-semibold">
+              <USelect v-model="newDcForm.type" :options="['on-prem', 'homelab', 'air-gap', 'cloud:aws', 'cloud:gcp', 'cloud:azure']" required />
+            </UFormGroup>
+            <UFormGroup label="Country Location" class="text-xs font-semibold">
+              <UInput v-model="newDcForm.country" placeholder="e.g. Ireland" />
+            </UFormGroup>
+            <UFormGroup label="City Location" class="text-xs font-semibold">
+              <UInput v-model="newDcForm.city" placeholder="e.g. Dublin" />
+            </UFormGroup>
+            <!-- Connection Speeds parameters -->
+            <UFormGroup label="Uplink Connection Speed" class="text-xs font-semibold">
+              <UInput v-model="newDcForm.uplink_speed" placeholder="e.g. 2.5 Gbps Fiber, AWS Elastic" />
+            </UFormGroup>
+            <UFormGroup label="Location Public IP Gate" class="text-xs font-semibold">
+              <UInput v-model="newDcForm.public_ip" placeholder="e.g. 85.12.85.112" />
+            </UFormGroup>
+          </div>
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <UButton color="gray" variant="ghost" @click="isCreateDcModalOpen = false">Cancel</UButton>
+            <UButton type="submit" :loading="isSavingDc" icon="i-heroicons-plus" color="primary">
+              Deploy Datacenter Profile
+            </UButton>
+          </div>
+        </form>
+      </UCard>
+    </UModal>
 
     <!-- Policy Management Modal -->
     <UModal v-model="isModalOpen" v-if="selectedUser">
@@ -1292,8 +1212,8 @@ const isSavingUser = ref(false)
 const isSavingField = ref(false)
 const isSavingHook = ref(false)
 
+const isCreateDcModalOpen = ref(false)
 const isSavingDc = ref(false)
-const isSavingRack = ref(false)
 
 const isSavingCat = ref(false)
 const isSavingSub = ref(false)
@@ -1439,22 +1359,6 @@ const newDcForm = ref({
   public_ip: ''
 })
 
-const newRackForm = ref({
-  datacenter_id: null,
-  name: '',
-  height_u: 42
-})
-
-const dcDropdownOptions = computed(() => {
-  const options = [{ label: 'Select location...', value: null }]
-  if (datacenters.value) {
-    datacenters.value.forEach(dc => {
-      options.push({ label: `${dc.name} (${dc.city})`, value: dc.id })
-    })
-  }
-  return options
-})
-
 // Room Layout Designer State Variables (Phase 1 CAD DCIM & Wall Drawing)
 const selectedDcIdForDesigner = ref(null)
 
@@ -1516,13 +1420,6 @@ const initializeDefaultFloors = async () => {
   }
 }
 
-// Auto preselect first datacenter in form if available
-watch(datacenters, (newDcs) => {
-  if (newDcs && newDcs.length > 0 && !newRackForm.value.datacenter_id) {
-    newRackForm.value.datacenter_id = newDcs[0].id
-  }
-}, { immediate: true })
-
 const registerDatacenter = async () => {
   isSavingDc.value = true
   try {
@@ -1544,6 +1441,7 @@ const registerDatacenter = async () => {
     newDcForm.value = { name: '', type: 'homelab', country: '', city: '', uplink_speed: '', public_ip: '' }
     await refreshDatacenters()
     alert('Datacenter location deployed and registered successfully.')
+    isCreateDcModalOpen.value = false
   } catch (err) {
     console.error('Failed to create datacenter:', err)
     alert('Deploy failed: Check authorization scopes or duplicate name constraints.')
@@ -1562,31 +1460,6 @@ const removeDatacenter = async (dcId) => {
     await refreshDatacenters()
   } catch (err) {
     console.error('Failed to decommission location:', err)
-  }
-}
-
-const registerRack = async () => {
-  isSavingRack.value = true
-  try {
-    const payload = {
-      ...newRackForm.value,
-      datacenter_id: newRackForm.value.datacenter_id,
-      height_u: Number(newRackForm.value.height_u)
-    }
-    await $fetch(`${apiBase}/racks/`, {
-      method: 'POST',
-      body: payload,
-      headers: getAuthHeader()
-    })
-    newRackForm.value.name = ''
-    newRackForm.value.height_u = 42
-    await refreshDatacenters()
-    alert('Rack cabinet deployed and registered successfully.')
-  } catch (err) {
-    console.error('Failed to deploy rack:', err)
-    alert('Deploy failed: Check cabinet specifications.')
-  } finally {
-    isSavingRack.value = false
   }
 }
 
@@ -2011,22 +1884,6 @@ const executeBulkCabling = async () => {
   } finally {
     isExecutingCabling.value = false
   }
-}
-
-// Taxonomy Tree-Graph Helpers (Phase 1 Taxonomy Tree-Graph Visualizer)
-const getCategoryAssetCount = (catName) => {
-  if (!allAssetsList.value) return 0
-  return allAssetsList.value.filter(a => a.type === catName).length
-}
-
-const rootCategories = computed(() => {
-  if (!categories.value) return []
-  return categories.value.filter(c => !c.parent_dependency)
-})
-
-const getChildCategories = (parentName) => {
-  if (!categories.value) return []
-  return categories.value.filter(c => c.parent_dependency === parentName)
 }
 
 // ----------------------------------------

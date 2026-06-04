@@ -8,12 +8,6 @@ This document outlines the architectural milestones, completed achievements, and
 
 The next generation of Northstar enhancements will target visual taxonomy linkages, thermal facility zoning, live port audits, and cloud-native observability.
 
-### Phase 1: Dynamic Tree-Graph Drag-and-Drop Taxonomy Link Assignments (UI L4)
-* **Goal:** Elevate the dynamic taxonomy map, allowing administrators to visually connect prerequisite chains via drag-and-drop mouse events.
-* **Details:**
-  - **Drag-and-Drop Node Connectors:** Implement HTML5 Drag-and-Drop handlers inside the Taxonomy Tree-Graph panel in Site Admin.
-  - **Instant GORM Persistences:** Dragging a child Category card (e.g. "Database") and dropping it directly onto a parent category card (e.g. "Server") automatically sets the child's `parent_dependency` string to the parent's name, triggering an asynchronous GORM database update.
-
 ### Phase 2: Custom Facility Placement Zones and Aisle Hot/Cold Corridor Indicators (DCIM L4)
 * **Goal:** Optimize server rack thermal layouts by allowing administrators to sketch colored hot/cold corridors and custom placement zones onto the CAD floor.
 * **Details:**
@@ -74,7 +68,7 @@ The Northstar platform has been successfully developed, refactored, and verified
 
 1. **Robust Go Backend & Relational Database (GORM & SQLite):** Migrated from legacy Python to a high-performance Go Echo REST API. Structured clean, human-logical modular folder structures separating routing handlers (`internal/router/router.go`) and business controllers (`internal/handlers/`) completely (Phase 11). Engineered version-led programmatic database migrations (`migrations.go`), and silent startup directory walking routines with muted `RecordNotFound` warnings.
 2. **Kubernetes-Style Declarative Seeding (GitOps L2):** Built a recursive, modular K8s-style bootstrapping engine. Ingests categories, sub-groups, users, permissions, and group linkages declaratively from YAML files under the `network.northstar.astrona.io/v1alpha1` namespace.
-3. **Advanced UX/UI & Nuxt 4 Architecture:** Migrated the frontend to a decoupled Nuxt 4 structure (`app/`). Engineered an elegant GitLab-style "Site Admin" utility hub, horizontal datacenter location filters, multi-stage 4-column creation wizards, and interactive on-screen onboarding guides.
+3. **Advanced UX/UI & Nuxt 4 Architecture:** Migrated the frontend to a decoupled Nuxt 4 structure (`app/`). Engineered an elegant GitLab-style "Site Admin" utility hub, horizontal datacenter location filters, multi-stage 4-column creation wizards, interactive on-screen onboarding guides, and an **interactive HTML5 Drag-and-Drop Taxonomy visualizer** inside Site Admin (Phase 1) supporting drag-and-drop category prerequisite assignments with live, asynchronous GORM persistence updates and circular dependency prevention guards.
 4. **Visual CAD Blueprinting & 3D Cabinet DCIM Canvas:** Designed interactive vertical 42U physical server cabinets featuring mounting rails and blinking status LEDs. Programmed SVG CAD floor plans with multi-floor selectors, precision 2D wall segment drawing tools, cross-cabinet copper/fiber patch ledgers, and automated Switch SFP+ port capacity heatmaps.
 5. **Advanced RBAC, Dynamic Custom Fields & SecOps Auditing:** Secured write/delete APIs with JWT authentication. Designed dynamic category attributes and tabs, CSV bulk inventory and cabling patch importers with inline regex pre-checks, active background TCP subnet scanners, asynchronous thread-safe webhook publishers (Slack/Jira), and AWS security compliance group visualizers.
 6. **Multi-Layer Verification, Real-Data E2E Test Suite & Diátaxis Developer Documentation:** Fully verified the codebase utilizing Go handler integration tests, Vitest component units, and a robust Playwright E2E browser test suite running against a dedicated E2E test database (`cmdb_e2e.db`). Bootstrapped a high-fidelity, Diátaxis-conforming MkDocs Material developer documentation portal (Phase 10) providing comprehensive tutorials, goal-oriented how-to recipes, REST API specifications, and Mermaid.js system architecture flowcharts fully aligned with Astrona corporate branding guidelines.
