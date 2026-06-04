@@ -1,6 +1,6 @@
-# CMDB Project
+# 🌟 Northstar CMDB
 
-This project contains a Nuxt 3 (v4 compatibility) frontend and a **Golang (Echo + GORM + SQLite)** backend for a Configuration Management Database (CMDB).
+**Northstar** is a modern, high-performance Configuration Management Database (CMDB) platform developed by **Astrona** (astrona.io). It features a polished Nuxt 3 frontend and a highly optimized, relational **Golang (Echo + GORM + SQLite)** backend.
 
 ---
 
