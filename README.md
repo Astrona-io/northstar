@@ -1,4 +1,6 @@
-# 🌟 Northstar CMDB
+# 🌟 Northstar
+
+![Northstar Logo](images/logo/social.png)
 
 **Northstar** is a modern, high-performance Configuration Management Database (CMDB) platform developed by **Astrona** (astrona.io). It features a polished Nuxt 3 frontend and a highly optimized, relational **Golang (Echo + GORM + SQLite)** backend.
 
