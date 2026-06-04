@@ -208,9 +208,12 @@
         </UTooltip>
 
         <!-- Muted Footer (Astrona Branding Requirements) -->
-        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-sans space-y-1.5 mt-2 shrink-0">
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-sans space-y-1 mt-2 shrink-0 text-center">
           <p v-if="!isSidebarCollapsed" class="leading-relaxed">
-            Northstar <span class="font-semibold text-slate-500 font-mono">{{ appVersion }}</span> &ndash; Owned by <a href="https://astrona.io" target="_blank" class="hover:underline hover:text-primary-500 font-semibold font-mono">Astrona.io</a>
+            Northstar &ndash; Owned by <a href="https://astrona.io" target="_blank" class="hover:underline hover:text-primary-500 font-semibold font-mono">Astrona.io</a>
+          </p>
+          <p v-if="!isSidebarCollapsed" class="text-[9px] font-semibold text-slate-500 font-mono leading-none">
+            {{ appVersion }}
           </p>
           <div :class="isSidebarCollapsed ? 'flex flex-col gap-1.5 items-center text-center' : 'flex items-center gap-2 justify-between'" class="flex">
             <!-- License Link (Triggering Modal) -->
@@ -381,9 +384,14 @@
           <div class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-md">
             <div class="flex items-start gap-2 max-w-xl">
               <UIcon name="i-heroicons-information-circle" class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
-              <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-normal font-sans">
-                As an Administrator, you are signing this binding copyleft agreement on behalf of your deployment. Access to the CMDB administration systems requires active AGPLv3 compliance registration.
-              </p>
+              <div class="space-y-1.5 text-[11px] text-slate-500 dark:text-slate-400 leading-normal font-sans text-left">
+                <p>
+                  As an Administrator, you are signing this binding copyleft agreement on behalf of your deployment. Access to the CMDB administration systems requires active AGPLv3 compliance registration.
+                </p>
+                <p class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
+                  Commercial licensing exceptions and enterprise SLAs are available. Contact <a href="https://astrona.io" target="_blank" class="text-primary-500 hover:underline">Astrona.io</a> or email <span class="font-mono">contact@astrona.io</span> for custom corporate licensing.
+                </p>
+              </div>
             </div>
             <UButton 
               color="green" 
