@@ -48,6 +48,7 @@ nav:
       - Getting Started: tutorials/getting-started.md
   - How-To Guides:
       - Custom Fields & Ingest: how-to/custom-fields.md
+      - OpenTelemetry Observability: how-to/observability.md
   - Reference:
       - API Endpoint Reference: reference/api-spec.md
   - Explanation:

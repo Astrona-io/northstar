@@ -1,16 +1,27 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"cmdb-backend/internal/database"
 	"cmdb-backend/internal/router"
+	"cmdb-backend/internal/telemetry"
 	"github.com/labstack/echo/v4"
 )
 
 // main is the primary runtime entrypoint for the Northstar CMDB Go REST API.
 // It initializes the database schema, runs K8s-style bootstrapping, registers endpoints, and boots Echo.
 func main() {
+	// Initialize OpenTelemetry SDK (Phase 9 APM Tracing)
+	ctx := context.Background()
+	shutdown, err := telemetry.InitTelemetry(ctx)
+	if err != nil {
+		log.Printf("[OTel Engine] Failed to initialize OpenTelemetry SDK: %v", err)
+	} else {
+		defer shutdown()
+	}
+
 	// Initialize relational SQLite GORM database structure
 	db, err := database.InitDB()
 	if err != nil {
@@ -25,6 +36,9 @@ func main() {
 
 	// Instantiate the core Echo HTTP router
 	e := echo.New()
+
+	// Enable standard OpenTelemetry Echo request tracing middleware (Phase 9)
+	e.Use(telemetry.Middleware())
 
 	// Register all REST controllers, advanced RBAC, and CORS middleware configurations (Phase 11 Refactor)
 	router.RegisterRoutes(e)

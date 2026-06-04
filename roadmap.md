@@ -56,12 +56,6 @@ The next generation of Northstar enhancements will target visual taxonomy linkag
   - **OS-Level Firewall Ingestion:** Integrate secure SSH crawler hooks to execute non-interactive commands to pull active host-level ingress rules during auto-discovery scans or let operators declare port rules in GORM.
   - **Host Ingress Rule Matrix:** On the visual SVG topology map, clicking a connection line dynamically audits the target's firewall matrix to verify if traffic is actually allowed or blocked (rendering green flowing paths for verified allowed links, and red dashed warning paths if blocked).
 
-### Phase 9: OpenTelemetry Ingestion & Distributed Observability (OTel L3)
-* **Goal:** Integrate OpenTelemetry (OTel) Tracing, Metrics, and Logs exporters in the Go backend to enable production-grade distributed tracing and observability across APM platforms (such as Jaeger, Prometheus, or Datadog).
-* **Details:**
-  - **OTel Go SDK Integration:** Set up TracerProviders and MeterProviders establishing outbound OTLP exporters over HTTP/JSON or gRPC.
-  - **Full DB & HTTP Instrumentation:** Instrument the Echo router and GORM callbacks to trace SQLite transaction runtimes and webhook event deliveries as spans.
-
 ### Phase 12: Declarative API Sandbox and Mock-free Live API Docs (API DX)
 * **Goal:** Streamline developer integrations by serving a live interactive API playground directly from the admin dashboard.
 * **Details:**
@@ -84,3 +78,4 @@ The Northstar platform has been successfully developed, refactored, and verified
 4. **Visual CAD Blueprinting & 3D Cabinet DCIM Canvas:** Designed interactive vertical 42U physical server cabinets featuring mounting rails and blinking status LEDs. Programmed SVG CAD floor plans with multi-floor selectors, precision 2D wall segment drawing tools, cross-cabinet copper/fiber patch ledgers, and automated Switch SFP+ port capacity heatmaps.
 5. **Advanced RBAC, Dynamic Custom Fields & SecOps Auditing:** Secured write/delete APIs with JWT authentication. Designed dynamic category attributes and tabs, CSV bulk inventory and cabling patch importers with inline regex pre-checks, active background TCP subnet scanners, asynchronous thread-safe webhook publishers (Slack/Jira), and AWS security compliance group visualizers.
 6. **Multi-Layer Verification, Real-Data E2E Test Suite & Diátaxis Developer Documentation:** Fully verified the codebase utilizing Go handler integration tests, Vitest component units, and a robust Playwright E2E browser test suite running against a dedicated E2E test database (`cmdb_e2e.db`). Bootstrapped a high-fidelity, Diátaxis-conforming MkDocs Material developer documentation portal (Phase 10) providing comprehensive tutorials, goal-oriented how-to recipes, REST API specifications, and Mermaid.js system architecture flowcharts fully aligned with Astrona corporate branding guidelines.
+7. **OpenTelemetry APM & Distributed Observability (OTel L3):** Engineered complete OpenTelemetry (OTel) Tracing SDK initialization into the server startup lifecycle (Phase 9). Built a custom, lightweight, highly optimized GORM database tracing plugin (`GormOTelPlugin`) that automatically hooks SQLite query and transaction execution callbacks, and enabled standard Echo HTTP request tracing middleware to map incoming endpoint traffic to backend trace Spans.

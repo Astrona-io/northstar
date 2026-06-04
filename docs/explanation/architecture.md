@@ -24,9 +24,13 @@ graph TD
         DB -.-> |Declarative Manifests| Seeder[internal/database/bootstrap.go]
         
         Handlers -.-> |JSON Webhook Alerts| Webhooks[Outbound Broadcaster]
+        
+        Router --> |Traces / HTTP Spans| OTel[internal/telemetry/]
+        DB --> |Traces / SQL Spans| OTel
     end
     
     Webhooks -.-> |Signed POST Callbacks| Integrations([Slack / JIRA API])
+    OTel -.-> |OTLP over HTTP/JSON| Collector([OpenTelemetry Collector / Jaeger])
 ```
 
 ---
@@ -67,3 +71,14 @@ To support standard DevSecOps practices, Northstar integrates a declarative **Gi
 * **Directory Auditing:** On boot, the seeder walks `.northstar-data/bootstrap/` recursively.
 * **YAML Ingestion:** The seeder parses modular single-resource manifests matching the `network.northstar.astrona.io/v1alpha1` Kubernetes API specifications.
 * **GORM Reconciliation:** Utilizing GORM's `FirstOrCreate` transaction boundaries, the system reconciles existing categories, sub-groups, users, and groups, updating metadata attributes dynamically without resetting active relational IDs or triggering GORM integrity warnings.
+
+---
+
+## 📊 OpenTelemetry Observability Architecture
+
+Northstar is fully instrumented with standard-conforming OpenTelemetry APM Tracing to guarantee complete visibility across complex request flows:
+
+1. **Echo HTTP Ingress Middleware:**
+   All incoming REST endpoints are intercepted by the standard OpenTelemetry Echo tracer. This automatically starts a new root Span for the request lifecycle, capturing the HTTP route, method, request payload metadata, and client IP, injecting trace headers cascade-style across downstream outbound API hooks.
+2. **GORM Database Callback Hooking (`GormOTelPlugin`):**
+   Northstar features a custom, high-performance database tracing plugin hooked directly into GORM v2 callbacks. When GORM starts a transaction (such as `Query`, `Create`, `Update`, or `Delete`), the plugin intercepts the operation, extracts the context, starts a child Span representing the SQL database call, captures the exact executed SQL statement (e.g. `SELECT * FROM categories`), and records GORM error exceptions dynamically.

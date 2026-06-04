@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"cmdb-backend/internal/models"
+	"cmdb-backend/internal/telemetry"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/sqlite"
@@ -47,6 +48,13 @@ func InitDB() (*gorm.DB, error) {
 	}
 
 	DB = db // Assign to package-level global connection pool (Phase 1 Database Engine Fix)
+
+	// Use the custom GORM OpenTelemetry Tracing Plugin (Phase 9)
+	log.Println("[OTel Engine] Connecting custom database tracer plugin to GORM schema callbacks...")
+	err = db.Use(telemetry.NewGormOTelPlugin())
+	if err != nil {
+		log.Printf("[OTel Engine] Warning: Failed to hook OpenTelemetry tracing onto GORM: %v", err)
+	}
 
 	log.Println("[Migration Engine] Applying automatic GORM schema AutoMigrate updates...")
 	// Automigrate DB schemas
