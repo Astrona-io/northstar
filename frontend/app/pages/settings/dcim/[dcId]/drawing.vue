@@ -57,24 +57,8 @@
     <!-- Main Workspace Area -->
     <div class="flex flex-grow min-h-0 relative">
       
-      <!-- Floating Sidebar Toggle Button (Phase 2 CAD Draw Updates) -->
-      <div class="absolute top-4 left-4 z-20">
-        <UButton 
-          :icon="isLeftPanelCollapsed ? 'i-heroicons-bars-3' : 'i-heroicons-chevron-left'" 
-          color="gray" 
-          variant="ghost" 
-          size="xs" 
-          @click="isLeftPanelCollapsed = !isLeftPanelCollapsed"
-          class="bg-slate-900/90 backdrop-blur border border-slate-800 shadow-lg text-slate-300 hover:bg-slate-800"
-          :title="isLeftPanelCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
-        />
-      </div>
-
-      <!-- Left Panel: Mode Selector (Phase 2 Collapsible Sidebar) -->
-      <aside 
-        class="bg-slate-900 flex flex-col justify-between flex-shrink-0 transition-all duration-300 ease-in-out"
-        :class="isLeftPanelCollapsed ? 'w-0 border-r-0 p-0 overflow-hidden' : 'w-64 border-r border-slate-800 p-4'"
-      >
+      <!-- Left Panel: Mode Selector -->
+      <aside class="bg-slate-900 flex flex-col justify-between flex-shrink-0 w-64 border-r border-slate-800 p-4">
         <div class="space-y-6">
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Drafting Modes</span>
@@ -389,7 +373,6 @@ watch(activeFloor, (newFloor) => {
 
 // Drawing state variables
 const canvasSvg = ref(null)
-const isLeftPanelCollapsed = ref(true)
 const draggedRackId = ref(null)
 const dragOffset = ref({ x: 0, y: 0 })
 const cadToolMode = ref('racks') // 'racks' or 'walls'
