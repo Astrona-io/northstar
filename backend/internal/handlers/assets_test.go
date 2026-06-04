@@ -37,6 +37,7 @@ func setupTestDB() {
 		&models.User{},
 		&models.DatacenterType{},
 		&models.DatacenterFloor{},
+		&models.DatacenterWall{},
 		&models.Datacenter{},
 		&models.Rack{},
 		&models.CustomField{},

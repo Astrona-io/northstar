@@ -104,4 +104,46 @@ func TestDCIMEndpoints(t *testing.T) {
 			t.Errorf("Expected name 'New-DC-Test', got '%s'", created.Name)
 		}
 	})
+
+	t.Run("Verify Automatic Floor 0 and Update Floor Alias", func(t *testing.T) {
+		// Fetch floors for the first Copenhagen-Mock datacenter
+		var floors []models.DatacenterFloor
+		if err := database.DB.Find(&floors, "datacenter_id = ?", dc.ID).Error; err != nil {
+			t.Fatalf("Failed to fetch floors: %v", err)
+		}
+
+		if len(floors) == 0 {
+			t.Errorf("Expected at least 1 floor (automatic Floor 0) for datacenter, got 0")
+		} else if floors[0].Name != "Floor 0" {
+			t.Errorf("Expected automatic floor name 'Floor 0', got '%s'", floors[0].Name)
+		}
+
+		// Test PUT /api/datacenter-floors/:id to update Name (Floor Alias)
+		floorID := floors[0].ID
+		bodyBytes := []byte(`{"name":"Floor Alias Test","level":1,"width":900,"depth":1100}`)
+		req := httptest.NewRequest(http.MethodPut, "/api/datacenter-floors/"+floorID, bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/datacenter-floors/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(floorID)
+
+		err := handlers.UpdateDatacenterFloor(c)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+		if rec.Code != http.StatusOK {
+			t.Errorf("Expected status OK, got %d, body: %s", rec.Code, rec.Body.String())
+		}
+
+		var updated models.DatacenterFloor
+		json.Unmarshal(rec.Body.Bytes(), &updated)
+		if updated.Name != "Floor Alias Test" {
+			t.Errorf("Expected updated floor name 'Floor Alias Test', got '%s'", updated.Name)
+		}
+		if updated.Level != 1 {
+			t.Errorf("Expected updated floor level 1, got %d", updated.Level)
+		}
+	})
 }

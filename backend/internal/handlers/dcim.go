@@ -84,6 +84,48 @@ func CreateDatacenterFloor(c echo.Context) error {
 	return c.JSON(http.StatusOK, floor)
 }
 
+// UpdateDatacenterFloor handles PUT /api/datacenter-floors/:id (Admin Only)
+func UpdateDatacenterFloor(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid floor ID"})
+	}
+
+	var existing models.DatacenterFloor
+	if err := database.DB.First(&existing, "id = ?", id).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Floor not found"})
+	}
+
+	var update struct {
+		Name  *string  `json:"name"`
+		Level *int     `json:"level"`
+		Width *float64 `json:"width"`
+		Depth *float64 `json:"depth"`
+	}
+	if err := c.Bind(&update); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request body"})
+	}
+
+	if update.Name != nil {
+		existing.Name = *update.Name
+	}
+	if update.Level != nil {
+		existing.Level = *update.Level
+	}
+	if update.Width != nil {
+		existing.Width = *update.Width
+	}
+	if update.Depth != nil {
+		existing.Depth = *update.Depth
+	}
+
+	if err := database.DB.Save(&existing).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update floor: " + err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, existing)
+}
+
 // DeleteDatacenterFloor handles DELETE /api/datacenter-floors/:id (Admin Only)
 func DeleteDatacenterFloor(c echo.Context) error {
 	id := c.Param("id")

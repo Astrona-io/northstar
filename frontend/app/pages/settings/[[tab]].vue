@@ -480,10 +480,47 @@
                         size="xs" 
                         color="primary" 
                         icon="i-heroicons-pencil-square"
+                        :disabled="!activeDesignerFloor"
                         @click="navigateTo(`/settings/dcim/${dc.id}/drawing?floorId=${activeDesignerFloor?.id}`)"
                       >
                         Enter Drafting Mode
                       </UButton>
+                    </div>
+
+                    <!-- Floor Level Selector & Management (Rename Alias & Add Floor) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-slate-50 dark:bg-slate-900/40 p-3 rounded-md border border-slate-200 dark:border-slate-800/80">
+                      <UFormGroup label="Active Floor Level" class="text-xs">
+                        <USelect 
+                          v-model="selectedFloorIdForDesigner" 
+                          :options="dc.floors?.map(f => ({ label: f.name + ' (Level ' + f.level + ')', value: f.id })) || []"
+                          size="xs"
+                          placeholder="Select floor level..."
+                        />
+                      </UFormGroup>
+                      <div class="flex gap-2 justify-end sm:justify-start pt-5">
+                        <!-- Rename Floor (Alias) Button -->
+                        <UButton 
+                          v-if="activeDesignerFloor && canMutate" 
+                          size="xs" 
+                          color="gray" 
+                          icon="i-heroicons-pencil-square"
+                          @click="openRenameFloorModal(activeDesignerFloor)"
+                        >
+                          Rename (Alias)
+                        </UButton>
+                        
+                        <!-- Add Floor Level Button -->
+                        <UButton 
+                          v-if="canMutate"
+                          size="xs" 
+                          color="primary" 
+                          variant="soft"
+                          icon="i-heroicons-plus"
+                          @click="openAddFloorModal(dc.id)"
+                        >
+                          Add Floor
+                        </UButton>
+                      </div>
                     </div>
 
                     <!-- Fine-sized preview box -->
@@ -1120,6 +1157,64 @@
         </form>
       </UCard>
     </UModal>
+
+    <!-- Rename Floor (Alias) Modal -->
+    <UModal v-model="isRenameFloorModalOpen">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-2">
+              <UIcon name="i-heroicons-pencil-square" class="text-primary-500 h-5 w-5" />
+              Rename Floor Level / Floor Alias
+            </h3>
+            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isRenameFloorModalOpen = false" />
+          </div>
+        </template>
+        
+        <form @submit.prevent="submitRenameFloor" class="space-y-4">
+          <UFormGroup label="Floor Name / Floor Alias" help="e.g. Server Room A, Ground Floor, Floor 0, Suite 101">
+            <UInput v-model="floorRenameForm.name" placeholder="Floor Name / Floor Alias" required />
+          </UFormGroup>
+          <UFormGroup label="Floor level number" help="e.g. 0 for ground level, 1 for first floor, -1 for basement">
+            <UInput type="number" v-model="floorRenameForm.level" required />
+          </UFormGroup>
+          
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <UButton color="gray" variant="ghost" @click="isRenameFloorModalOpen = false">Cancel</UButton>
+            <UButton type="submit" color="primary" :loading="isSavingFloorRename">Save Changes</UButton>
+          </div>
+        </form>
+      </UCard>
+    </UModal>
+
+    <!-- Add Floor Level Modal -->
+    <UModal v-model="isAddFloorModalOpen">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-2">
+              <UIcon name="i-heroicons-plus-circle" class="text-primary-500 h-5 w-5" />
+              Add Datacenter Floor Level
+            </h3>
+            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isAddFloorModalOpen = false" />
+          </div>
+        </template>
+        
+        <form @submit.prevent="submitAddFloor" class="space-y-4">
+          <UFormGroup label="Floor Name" help="e.g. Floor 1, Basement Level -1">
+            <UInput v-model="floorAddForm.name" placeholder="e.g. Floor 1" required />
+          </UFormGroup>
+          <UFormGroup label="Floor level number" help="e.g. 1, 2, -1">
+            <UInput type="number" v-model="floorAddForm.level" required />
+          </UFormGroup>
+          
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <UButton color="gray" variant="ghost" @click="isAddFloorModalOpen = false">Cancel</UButton>
+            <UButton type="submit" color="primary" :loading="isSavingFloorAdd">Create Level</UButton>
+          </div>
+        </form>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
@@ -1128,6 +1223,21 @@ import { ref, computed, watch } from 'vue'
 
 const route = useRoute()
 const router = useRouter()
+const toast = useToast()
+
+// Modern, non-blocking notification interceptor overriding browser alert popups
+const alert = (message) => {
+  const isError = message.toLowerCase().includes('fail') || 
+                  message.toLowerCase().includes('error') || 
+                  message.toLowerCase().includes('limit') ||
+                  message.toLowerCase().includes('reject')
+  toast.add({
+    title: isError ? 'Operational Alert' : 'Success',
+    description: message,
+    color: isError ? 'red' : 'green',
+    icon: isError ? 'i-heroicons-x-circle' : 'i-heroicons-check-circle'
+  })
+}
 
 const { fetchUsers, fetchGroups, fetchPermissions, updateUserOverrides } = useUsers()
 const { fetchCustomFields, createCustomField, deleteCustomField } = useCustomFields()
@@ -1417,6 +1527,73 @@ const initializeDefaultFloors = async () => {
     console.error('Failed to create default floors:', err)
   } finally {
     isCreatingDefaultFloors.value = false
+  }
+}
+
+// Floor Level Management (Rename Alias & Add Floor)
+const isRenameFloorModalOpen = ref(false)
+const isSavingFloorRename = ref(false)
+const floorRenameForm = ref({ id: '', name: '', level: 0 })
+
+const openRenameFloorModal = (floor) => {
+  floorRenameForm.value = { id: floor.id, name: floor.name, level: floor.level }
+  isRenameFloorModalOpen.value = true
+}
+
+const submitRenameFloor = async () => {
+  isSavingFloorRename.value = true
+  try {
+    await $fetch(`${apiBase}/datacenter-floors/${floorRenameForm.value.id}`, {
+      method: 'PUT',
+      body: { 
+        name: floorRenameForm.value.name, 
+        level: parseInt(floorRenameForm.value.level) 
+      },
+      headers: getAuthHeader()
+    })
+    await refreshDatacenters()
+    isRenameFloorModalOpen.value = false
+    alert('Floor details updated successfully!')
+  } catch (err) {
+    console.error('Failed to rename floor:', err)
+    alert('Failed to update floor details.')
+  } finally {
+    isSavingFloorRename.value = false
+  }
+}
+
+const isAddFloorModalOpen = ref(false)
+const isSavingFloorAdd = ref(false)
+const floorAddForm = ref({ datacenter_id: '', name: '', level: 0 })
+
+const openAddFloorModal = (dcId) => {
+  floorAddForm.value = { datacenter_id: dcId, name: '', level: 0 }
+  isAddFloorModalOpen.value = true
+}
+
+const submitAddFloor = async () => {
+  isSavingFloorAdd.value = true
+  try {
+    const res = await $fetch(`${apiBase}/datacenter-floors`, {
+      method: 'POST',
+      body: { 
+        datacenter_id: floorAddForm.value.datacenter_id, 
+        name: floorAddForm.value.name, 
+        level: parseInt(floorAddForm.value.level) 
+      },
+      headers: getAuthHeader()
+    })
+    await refreshDatacenters()
+    if (res && res.id) {
+      selectedFloorIdForDesigner.value = res.id
+    }
+    isAddFloorModalOpen.value = false
+    alert('Floor level created successfully!')
+  } catch (err) {
+    console.error('Failed to create floor level:', err)
+    alert('Failed to create floor level.')
+  } finally {
+    isSavingFloorAdd.value = false
   }
 }
 
