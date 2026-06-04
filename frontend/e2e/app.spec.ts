@@ -103,8 +103,18 @@ test.describe('UX Testing: CMDB Application', () => {
     await page.goto('/settings/dcim');
     await page.waitForTimeout(2000);
 
-    // Verify Settings tab title or section heading is visible
+    // Click on Deploy New Location Profile button to trigger the Modal
+    const openModalBtn = page.getByRole('button', { name: 'Deploy New Location Profile' });
+    await expect(openModalBtn).toBeVisible();
+    await openModalBtn.click();
+    await page.waitForTimeout(1000);
+
+    // Verify Modal title is visible
     await expect(page.locator('h4').filter({ hasText: 'Deploy New Location Profile' })).toBeVisible();
+
+    // Close the Modal
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await page.waitForTimeout(1000);
     
     // Click on Northstar-Dublin-HQ card in the location list
     await page.locator('div.cursor-pointer', { hasText: 'Northstar-Dublin-HQ' }).first().click();
