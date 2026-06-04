@@ -112,6 +112,19 @@ func (m *Datacenter) BeforeCreate(tx *gorm.DB) (err error) {
 	if m.ID == "" {
 		m.ID = uuid.New().String()
 	}
+	// Automatically create a default Floor 0 if the floors list is empty
+	if len(m.Floors) == 0 {
+		m.Floors = []DatacenterFloor{
+			{
+				ID:           uuid.New().String(),
+				DatacenterID: m.ID,
+				Name:         "Floor 0",
+				Level:        0,
+				Width:        800,
+				Depth:        1200,
+			},
+		}
+	}
 	return
 }
 
