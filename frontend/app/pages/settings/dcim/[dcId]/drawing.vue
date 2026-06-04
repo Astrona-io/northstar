@@ -56,25 +56,9 @@
 
     <!-- Main Workspace Area -->
     <div class="flex flex-grow min-h-0 relative">
-      
-      <!-- Floating Sidebar Toggle Button (Phase 2 CAD Draw Updates) -->
-      <div class="absolute top-4 left-4 z-20">
-        <UButton 
-          :icon="isLeftPanelCollapsed ? 'i-heroicons-bars-3' : 'i-heroicons-chevron-left'" 
-          color="gray" 
-          variant="ghost" 
-          size="xs" 
-          @click="isLeftPanelCollapsed = !isLeftPanelCollapsed"
-          class="bg-slate-900/90 backdrop-blur border border-slate-800 shadow-lg text-slate-300 hover:bg-slate-800"
-          :title="isLeftPanelCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'"
-        />
-      </div>
 
-      <!-- Left Panel: Mode Selector (Phase 2 Collapsible Sidebar) -->
-      <aside 
-        class="bg-slate-900 flex flex-col justify-between flex-shrink-0 transition-all duration-300 ease-in-out"
-        :class="isLeftPanelCollapsed ? 'w-0 border-r-0 p-0 overflow-hidden' : 'w-64 border-r border-slate-800 p-4'"
-      >
+      <!-- Left Panel: Mode Selector -->
+      <aside class="bg-slate-900 flex flex-col justify-between flex-shrink-0 w-64 border-r border-slate-800 p-4">
         <div class="space-y-6">
           <div class="space-y-2">
             <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Drafting Modes</span>
@@ -82,21 +66,10 @@
               <UButton 
                 block
                 size="sm" 
-                :color="cadToolMode === 'racks' ? 'primary' : 'gray'" 
-                variant="soft" 
-                icon="i-heroicons-server" 
-                @click="cadToolMode = 'racks'"
-                class="justify-start font-medium"
-              >
-                Cabinet Mode
-              </UButton>
-              <UButton 
-                block
-                size="sm" 
                 :color="cadToolMode === 'walls' ? 'primary' : 'gray'" 
                 variant="soft" 
                 icon="i-heroicons-pencil" 
-                @click="cadToolMode = 'walls'"
+                @click="cadToolMode = cadToolMode === 'walls' ? 'select' : 'walls'"
                 class="justify-start font-medium"
               >
                 Draw Walls Mode
@@ -234,22 +207,22 @@
 
             <!-- Render active racks -->
             <g 
-              v-for="rack in localRacks" 
+              v-for="rack in localRacks.filter(r => r.x > 0 || r.y > 0)" 
               :key="rack.id" 
               class="cursor-pointer" 
               @mousedown="onDesignerMouseDown(rack, $event)"
             >
               <rect 
-                :x="rack.x || (20 + (rack.id * 70))" 
-                :y="rack.y || 40" 
+                :x="rack.x" 
+                :y="rack.y" 
                 width="60" 
                 height="60" 
                 :class="draggedRackId === rack.id ? 'stroke-primary-500 stroke-2 fill-primary-950/40' : 'stroke-slate-600 fill-slate-800 hover:stroke-primary-400'"
                 rx="6"
               />
               <text 
-                :x="(rack.x || (20 + (rack.id * 70))) + 30" 
-                :y="(rack.y || 40) + 36" 
+                :x="rack.x + 30" 
+                :y="rack.y + 36" 
                 fill="#fff" 
                 font-size="10" 
                 font-family="monospace" 
@@ -265,6 +238,18 @@
 
       <!-- Right Panel: Items Legend & Stats -->
       <aside class="w-80 bg-slate-900 border-l border-slate-800 p-4 flex flex-col gap-6 flex-shrink-0 overflow-y-auto">
+        
+        <!-- Deploy Action Button (Create Blueprint Style) -->
+        <UButton 
+          block 
+          color="primary" 
+          icon="i-heroicons-plus-circle"
+          class="font-bold py-2 shadow-sm animate-pulse"
+          @click="isDeployModalOpen = true"
+        >
+          Create Blueprint
+        </UButton>
+
         <div class="space-y-2">
           <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Location Metrics</span>
           <div class="p-3 bg-slate-950 rounded-md border border-slate-800 space-y-2 text-xs">
@@ -285,43 +270,92 @@
           </div>
         </div>
 
-        <!-- Deploy Cabinet Enclosure Panel (Phase 2 CAD Draw Updates) -->
-        <div class="space-y-3 p-4 bg-slate-950 border border-slate-800 rounded-md">
-          <span class="text-[10px] font-bold text-primary-500 uppercase tracking-wider font-mono block">Deploy Cabinet Enclosure</span>
-          <form @submit.prevent="deployNewCabinet" class="space-y-3">
-            <UFormGroup label="Enclosure Tag/Name" class="text-xs font-semibold">
-              <UInput v-model="newCabinetForm.name" size="xs" placeholder="e.g. Rack-01" required />
-            </UFormGroup>
-            <UFormGroup label="Height Capacity (U)" class="text-xs font-semibold">
-              <UInput v-model="newCabinetForm.height_u" type="number" min="1" max="100" size="xs" placeholder="42" required />
-            </UFormGroup>
-            <UButton type="submit" block size="xs" icon="i-heroicons-plus" color="primary" class="font-bold">
-              Deploy Cabinet Frame
-            </UButton>
-          </form>
-        </div>
-
-        <div class="space-y-3 flex-grow">
+        <div class="space-y-4 flex-grow">
           <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider font-mono">Blueprint Inventory</span>
-          <div class="space-y-1 max-h-[300px] overflow-y-auto pr-1">
-            <div 
-              v-for="rack in localRacks" 
-              :key="rack.id"
-              class="flex items-center justify-between p-2.5 bg-slate-950 border border-slate-800 rounded-md text-xs hover:border-slate-700"
-            >
-              <div class="flex items-center gap-2">
-                <UIcon name="i-heroicons-rectangle-stack" class="text-primary-500 h-4 w-4" />
-                <span class="font-mono font-semibold">{{ rack.name }}</span>
-              </div>
-              <span class="text-[10px] text-slate-400 font-mono">x:{{ Math.round(rack.x) }}, y:{{ Math.round(rack.y) }}</span>
+          
+          <div class="space-y-2">
+            <!-- Cabinets Group Title -->
+            <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase font-mono border-b border-slate-800 pb-1.5">
+              <UIcon name="i-heroicons-server" class="h-3.5 w-3.5" />
+              <span>Cabinets</span>
             </div>
-            <div v-if="localRacks.length === 0" class="text-xs text-slate-500 italic p-3 text-center">
-              No deployed cabinet frames.
+            
+            <div class="space-y-1 max-h-[300px] overflow-y-auto pr-1">
+              <div 
+                v-for="rack in localRacks" 
+                :key="rack.id"
+                class="flex items-center justify-between p-2 bg-slate-950 border border-slate-800 rounded-md text-xs hover:border-slate-700"
+              >
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-rectangle-stack" class="text-primary-500 h-4 w-4" />
+                  <div class="flex flex-col">
+                    <span class="font-mono font-semibold">Rack-{{ rack.name }}</span>
+                    <span class="text-[10px] text-slate-500 font-mono">Capacity: {{ rack.height_u }}U</span>
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-1.5">
+                  <template v-if="rack.x > 0 || rack.y > 0">
+                    <span class="text-[10px] text-slate-400 font-mono">x:{{ Math.round(rack.x) }}, y:{{ Math.round(rack.y) }}</span>
+                    <UButton 
+                      size="xs" 
+                      color="red" 
+                      variant="ghost" 
+                      icon="i-heroicons-minus-circle"
+                      title="Unplace from Grid"
+                      @click="unplaceCabinetFromGrid(rack)"
+                    />
+                  </template>
+                  <template v-else>
+                    <UBadge size="xs" color="gray" variant="soft" class="text-[9px] font-bold">Not Placed</UBadge>
+                    <UButton 
+                      size="xs" 
+                      color="primary" 
+                      variant="soft" 
+                      icon="i-heroicons-map-pin"
+                      title="Place on Grid"
+                      @click="placeCabinetOnGrid(rack)"
+                    />
+                  </template>
+                </div>
+              </div>
+              <div v-if="localRacks.length === 0" class="text-xs text-slate-500 italic p-3 text-center">
+                No deployed cabinet frames.
+              </div>
             </div>
           </div>
         </div>
       </aside>
     </div>
+
+    <!-- Deploy Cabinet Enclosure Modal Dialog -->
+    <UModal v-model="isDeployModalOpen">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-2">
+              <UIcon name="i-heroicons-plus-circle" class="text-primary-500 h-5 w-5 animate-pulse" />
+              Deploy Cabinet Enclosure Frame
+            </h3>
+            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isDeployModalOpen = false" />
+          </div>
+        </template>
+        
+        <form @submit.prevent="deployNewCabinet" class="space-y-4">
+          <UFormGroup label="Enclosure Tag/Name" help="e.g. Rack-01, Cabinet-A05">
+            <UInput v-model="newCabinetForm.name" placeholder="e.g. Rack-01" required />
+          </UFormGroup>
+          <UFormGroup label="Height Capacity (U)" help="The standard cabinet vertical height (e.g. 42U is standard)">
+            <UInput v-model="newCabinetForm.height_u" type="number" min="1" max="100" placeholder="42" required />
+          </UFormGroup>
+          
+          <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+            <UButton color="gray" variant="ghost" @click="isDeployModalOpen = false">Cancel</UButton>
+            <UButton type="submit" color="primary">Deploy Frame</UButton>
+          </div>
+        </form>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
@@ -363,6 +397,7 @@ const localWalls = ref([])
 const localRacks = ref([])
 const pendingDeletions = ref([]) // track database walls deleted locally
 
+const isDeployModalOpen = ref(false)
 const newCabinetForm = ref({
   name: '',
   height_u: 42
@@ -389,10 +424,9 @@ watch(activeFloor, (newFloor) => {
 
 // Drawing state variables
 const canvasSvg = ref(null)
-const isLeftPanelCollapsed = ref(true)
 const draggedRackId = ref(null)
 const dragOffset = ref({ x: 0, y: 0 })
-const cadToolMode = ref('racks') // 'racks' or 'walls'
+const cadToolMode = ref('select') // 'select' (standard pointer/dragging allowed) or 'walls' (drawing walls)
 const wallDraftStart = ref(null)
 const wallDraftCurrent = ref(null)
 
@@ -437,7 +471,6 @@ const resetAutoSaveTimer = () => {
 }
 
 const onDesignerMouseDown = (rack, event) => {
-  if (cadToolMode.value !== 'racks') return
   draggedRackId.value = rack.id
   
   const svgElement = canvasSvg.value || event.currentTarget?.ownerSVGElement
@@ -479,7 +512,7 @@ const onDesignerMouseMove = (event) => {
   if (!svgElement) return
 
   // Dragging cabinets
-  if (draggedRackId.value && cadToolMode.value === 'racks') {
+  if (draggedRackId.value) {
     const pt = svgElement.createSVGPoint()
     pt.x = event.clientX
     pt.y = event.clientY
@@ -519,7 +552,7 @@ const onDesignerMouseMove = (event) => {
 
 const onDesignerMouseUp = () => {
   // Release cabinet drag
-  if (draggedRackId.value && cadToolMode.value === 'racks') {
+  if (draggedRackId.value) {
     draggedRackId.value = null
     return
   }
@@ -540,10 +573,10 @@ const onDesignerMouseUp = () => {
     localWalls.value.push({
       id: 'temp_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
       datacenter_floor_id: activeFloor.value.id,
-      x1: x1 / 2,
-      y1: y1 / 2,
-      x2: x2 / 2,
-      y2: y2 / 2
+      x1: x1,
+      y1: y1,
+      x2: x2,
+      y2: y2
     })
     markDirty()
   }
@@ -613,14 +646,15 @@ const saveChanges = async () => {
 }
 
 const deployNewCabinet = async () => {
-  if (!activeFloor.value) return
+  if (!activeFloor.value || !selectedFloorId.value) return
   try {
     const payload = {
       datacenter_id: dcId,
+      datacenter_floor_id: selectedFloorId.value, // Link newly created cabinet directly to active floor level
       name: newCabinetForm.value.name,
       height_u: Number(newCabinetForm.value.height_u),
-      x: 40,
-      y: 40
+      x: 0, // Starts as Not Placed
+      y: 0  // Starts as Not Placed
     }
     await $fetch(`${apiBase}/racks/`, {
       method: 'POST',
@@ -628,12 +662,25 @@ const deployNewCabinet = async () => {
       headers: getAuthHeader()
     })
     newCabinetForm.value = { name: '', height_u: 42 }
+    isDeployModalOpen.value = false
     await refreshDatacenters()
     syncLocalStateFromDB()
     console.log('Cabinet deployed successfully in drawing tool')
   } catch (err) {
     console.error('Failed to deploy cabinet from workspace:', err)
   }
+}
+
+const placeCabinetOnGrid = (rack) => {
+  rack.x = 40
+  rack.y = 40
+  markDirty()
+}
+
+const unplaceCabinetFromGrid = (rack) => {
+  rack.x = 0
+  rack.y = 0
+  markDirty()
 }
 
 const leaveWorkspace = async () => {
