@@ -2,68 +2,110 @@
   <div class="flex h-screen bg-slate-100 dark:bg-slate-950 overflow-hidden font-sans">
     
     <!-- Left Sidebar (GitLab / Gitea Vertical Navigation Sidebar) -->
-    <aside class="w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between h-screen p-4 flex-shrink-0 shadow-sm">
+    <aside 
+      :class="isSidebarCollapsed ? 'w-20' : 'w-64'" 
+      class="bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between h-screen p-4 flex-shrink-0 shadow-sm transition-all duration-300 ease-in-out"
+    >
       
       <!-- Top Portion: Logo & Standard Navigation -->
       <div class="space-y-6">
         <!-- Logo Branding (Forgejo Style) -->
-        <div class="flex items-center gap-3 px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <UIcon name="i-heroicons-sparkles" class="h-6 w-6 text-primary-500" />
-          <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
-            Northstar
-          </h1>
-          <span class="text-[9px] font-bold text-primary-600 dark:text-primary-400 bg-primary-100/50 dark:bg-primary-950/50 px-1.5 py-0.5 rounded uppercase font-mono">CMDB</span>
+        <div class="flex items-center justify-between px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div class="flex items-center gap-3">
+            <UIcon name="i-heroicons-sparkles" class="h-6 w-6 text-primary-500 shrink-0" />
+            <h1 v-if="!isSidebarCollapsed" class="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono shrink-0">
+              Northstar
+            </h1>
+          </div>
+          <!-- Toggle Collapse Button -->
+          <UButton
+            :icon="isSidebarCollapsed ? 'i-heroicons-chevron-double-right' : 'i-heroicons-chevron-double-left'"
+            color="gray"
+            variant="ghost"
+            size="xs"
+            @click="isSidebarCollapsed = !isSidebarCollapsed"
+            :class="isSidebarCollapsed ? 'mx-auto' : ''"
+            title="Toggle Sidebar"
+          />
         </div>
 
         <!-- Standard Operational Navigation List -->
         <nav class="space-y-1">
-          <UButton 
-            to="/" 
-            variant="ghost" 
-            color="gray" 
-            block 
-            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
-            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
-            icon="i-heroicons-rectangle-stack"
-          >
-            Assets
-          </UButton>
+          <UTooltip text="Assets" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }" class="block">
+            <UButton 
+              to="/" 
+              variant="ghost" 
+              color="gray" 
+              block 
+              :active-class="isSidebarCollapsed 
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-md' 
+                : 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none'" 
+              :class="[
+                isSidebarCollapsed ? 'justify-center px-0' : 'justify-start text-left px-3 border-l-4 border-transparent',
+                'py-2.5 rounded-md transition-all text-xs'
+              ]"
+              icon="i-heroicons-rectangle-stack"
+            >
+              <span v-if="!isSidebarCollapsed">Assets</span>
+            </UButton>
+          </UTooltip>
           
-          <UButton 
-            to="/dcim" 
-            variant="ghost" 
-            color="gray" 
-            block 
-            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
-            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
-            icon="i-heroicons-server"
-          >
-            Datacenters
-          </UButton>
+          <UTooltip text="Datacenters" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }" class="block">
+            <UButton 
+              to="/dcim" 
+              variant="ghost" 
+              color="gray" 
+              block 
+              :active-class="isSidebarCollapsed 
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-md' 
+                : 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none'" 
+              :class="[
+                isSidebarCollapsed ? 'justify-center px-0' : 'justify-start text-left px-3 border-l-4 border-transparent',
+                'py-2.5 rounded-md transition-all text-xs'
+              ]"
+              icon="i-heroicons-server"
+            >
+              <span v-if="!isSidebarCollapsed">Datacenters</span>
+            </UButton>
+          </UTooltip>
           
-          <UButton 
-            to="/topology" 
-            variant="ghost" 
-            color="gray" 
-            block 
-            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
-            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
-            icon="i-heroicons-globe-alt"
-          >
-            Topology
-          </UButton>
+          <UTooltip text="Topology" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }" class="block">
+            <UButton 
+              to="/topology" 
+              variant="ghost" 
+              color="gray" 
+              block 
+              :active-class="isSidebarCollapsed 
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-md' 
+                : 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none'" 
+              :class="[
+                isSidebarCollapsed ? 'justify-center px-0' : 'justify-start text-left px-3 border-l-4 border-transparent',
+                'py-2.5 rounded-md transition-all text-xs'
+              ]"
+              icon="i-heroicons-globe-alt"
+            >
+              <span v-if="!isSidebarCollapsed">Topology</span>
+            </UButton>
+          </UTooltip>
           
-          <UButton 
-            to="/devices" 
-            variant="ghost" 
-            color="gray" 
-            block 
-            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
-            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
-            icon="i-heroicons-cpu-chip"
-          >
-            Device Catalog
-          </UButton>
+          <UTooltip text="Device Catalog" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }" class="block">
+            <UButton 
+              to="/devices" 
+              variant="ghost" 
+              color="gray" 
+              block 
+              :active-class="isSidebarCollapsed 
+                ? 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-md' 
+                : 'bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none'" 
+              :class="[
+                isSidebarCollapsed ? 'justify-center px-0' : 'justify-start text-left px-3 border-l-4 border-transparent',
+                'py-2.5 rounded-md transition-all text-xs'
+              ]"
+              icon="i-heroicons-cpu-chip"
+            >
+              <span v-if="!isSidebarCollapsed">Device Catalog</span>
+            </UButton>
+          </UTooltip>
         </nav>
       </div>
 
@@ -71,34 +113,46 @@
       <div class="space-y-4 border-t border-slate-200 dark:border-slate-800 pt-4">
         
         <!-- GitOps Exporter Button (Phase 1 GitOps YAML Generator) -->
-        <UButton 
-          variant="ghost" 
-          color="gray" 
-          block 
-          @click="isGitOpsDrawerOpen = true"
-          class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 border-l-4 border-transparent"
-          icon="i-heroicons-code-bracket-square"
-        >
-          GitOps YAML Exporter
-        </UButton>
+        <UTooltip text="GitOps YAML Exporter" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }" class="block">
+          <UButton 
+            variant="ghost" 
+            color="gray" 
+            block 
+            @click="isGitOpsDrawerOpen = true"
+            :class="[
+              isSidebarCollapsed ? 'justify-center px-0' : 'justify-start text-left px-3 border-l-4 border-transparent',
+              'py-2.5 rounded-md transition-all text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20'
+            ]"
+            icon="i-heroicons-code-bracket-square"
+          >
+            <span v-if="!isSidebarCollapsed">GitOps YAML Exporter</span>
+          </UButton>
+        </UTooltip>
 
         <!-- Site Admin button (Anchored at the bottom separately, GitLab style) -->
-        <UButton 
-          v-if="isAdmin" 
-          to="/settings" 
-          variant="ghost" 
-          color="gray" 
-          block 
-          active-class="bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold border-l-4 border-red-500 rounded-none" 
-          class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border-l-4 border-transparent"
-          icon="i-heroicons-shield-check"
-        >
-          Site Admin
-        </UButton>
+        <UTooltip text="Site Admin" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }" class="block">
+          <UButton 
+            v-if="isAdmin" 
+            to="/settings" 
+            variant="ghost" 
+            color="gray" 
+            block 
+            :active-class="isSidebarCollapsed 
+              ? 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold rounded-md' 
+              : 'bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold border-l-4 border-red-500 rounded-none'" 
+            :class="[
+              isSidebarCollapsed ? 'justify-center px-0' : 'justify-start text-left px-3 border-l-4 border-transparent',
+              'py-2.5 rounded-md transition-all text-xs text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20'
+            ]"
+            icon="i-heroicons-shield-check"
+          >
+            <span v-if="!isSidebarCollapsed">Site Admin</span>
+          </UButton>
+        </UTooltip>
 
         <!-- Session Profile Card -->
-        <div v-if="isAuthenticated" class="space-y-3 bg-white dark:bg-slate-900 p-3 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
-          <div class="flex items-center justify-between gap-2">
+        <div v-if="isAuthenticated" :class="isSidebarCollapsed ? 'p-1' : 'p-3'" class="space-y-3 bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-300">
+          <div v-if="!isSidebarCollapsed" class="flex items-center justify-between gap-2">
             <div class="truncate flex-1">
               <span class="text-[9px] text-slate-400 uppercase font-bold block leading-none mb-1 font-mono">Signed Operator</span>
               <span class="text-xs font-semibold text-slate-800 dark:text-white truncate block">{{ user.username }}</span>
@@ -106,42 +160,64 @@
             <UBadge :color="isAdmin ? 'red' : (isOperator ? 'blue' : 'gray')" size="xs" variant="subtle" class="uppercase text-[8px] font-bold font-mono">{{ user.role }}</UBadge>
           </div>
           
-          <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-2">
+          <div :class="isSidebarCollapsed ? 'flex-col gap-2 align-center' : 'flex-row justify-between pt-2 border-t border-slate-200 dark:border-slate-800'" class="flex items-center">
             <!-- Theme Toggle -->
             <ClientOnly>
-              <UButton
-                :icon="isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'"
-                color="gray"
-                variant="ghost"
-                size="xs"
-                @click="isDark = !isDark"
-              />
+              <UTooltip :text="isDark ? 'Switch to Light Theme' : 'Switch to Dark Theme'" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }">
+                <UButton
+                  :icon="isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'"
+                  color="gray"
+                  variant="ghost"
+                  size="xs"
+                  @click="isDark = !isDark"
+                />
+              </UTooltip>
               <template #fallback>
                 <div class="w-6 h-6" />
               </template>
             </ClientOnly>
             
-            <UButton 
-              size="xs" 
-              variant="ghost" 
-              color="red" 
-              icon="i-heroicons-arrow-right-start-on-rectangle" 
-              label="Sign Out" 
-              class="text-[10px] px-2 py-1 hover:bg-red-50 dark:hover:bg-red-950/20"
-              @click="logout" 
-            />
+            <UTooltip text="Sign Out" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }">
+              <UButton 
+                size="xs" 
+                variant="ghost" 
+                color="red" 
+                icon="i-heroicons-arrow-right-start-on-rectangle" 
+                :label="isSidebarCollapsed ? '' : 'Sign Out'" 
+                :class="[
+                  isSidebarCollapsed ? 'p-1' : 'text-[10px] px-2 py-1',
+                  'hover:bg-red-50 dark:hover:bg-red-950/20'
+                ]"
+                @click="logout" 
+              />
+            </UTooltip>
           </div>
         </div>
 
-        <UButton v-else to="/login" block size="sm" variant="outline" icon="i-heroicons-arrow-right-end-on-rectangle">
-          Sign In
-        </UButton>
+        <UTooltip v-else text="Sign In" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }" class="block">
+          <UButton 
+            to="/login" 
+            block 
+            size="sm" 
+            variant="outline" 
+            icon="i-heroicons-arrow-right-end-on-rectangle"
+            :class="isSidebarCollapsed ? 'justify-center px-0' : ''"
+          >
+            <span v-if="!isSidebarCollapsed">Sign In</span>
+          </UButton>
+        </UTooltip>
       </div>
     </aside>
 
     <!-- Right Column Main Content Port -->
-    <main class="flex-1 overflow-y-auto h-screen p-8 bg-slate-100 dark:bg-slate-950">
-      <div class="max-w-7xl mx-auto">
+    <main 
+      :class="isSidebarCollapsed ? 'p-3' : 'p-6'" 
+      class="flex-1 overflow-y-auto h-screen bg-slate-100 dark:bg-slate-950 transition-all duration-300"
+    >
+      <div 
+        :class="isSidebarCollapsed ? 'max-w-none' : 'max-w-[1500px]'" 
+        class="mx-auto transition-all duration-300"
+      >
         
         <!-- Global Northstar Onboarding Learning Checklist (Phase 5 Global Checklist) -->
         <UCard v-if="showOnboarding" class="mb-6 border border-dashed border-primary-500 bg-primary-50/10 dark:bg-primary-950/10 rounded-md relative shadow-sm">
@@ -255,6 +331,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 
 const colorMode = useColorMode()
+const isSidebarCollapsed = ref(false)
 const { user, isAuthenticated, isAdmin, isOperator, logout } = useAuth()
 const route = useRoute()
 
