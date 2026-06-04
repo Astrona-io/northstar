@@ -56,7 +56,7 @@
 
     <!-- Main Workspace Area -->
     <div class="flex flex-grow min-h-0 relative">
-
+      
       <!-- Left Panel: Mode Selector -->
       <aside class="bg-slate-900 flex flex-col justify-between flex-shrink-0 w-64 border-r border-slate-800 p-4">
         <div class="space-y-6">
