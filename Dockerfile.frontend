@@ -33,7 +33,7 @@ ENV PORT=3000
 ENV HOST=0.0.0.0
 
 # Copy compiled production build from builder stage
-COPY --from=builder /app/frontend/.output ./
+COPY --from=builder /app/.output ./
 
 # Secure execution port mapping
 EXPOSE 3000
