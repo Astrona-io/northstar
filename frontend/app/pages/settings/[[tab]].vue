@@ -1,14 +1,14 @@
 <template>
-  <div class="space-y-6 h-[calc(100vh-4rem)] flex flex-col overflow-hidden font-sans">
-    
+  <div class="space-y-6 font-sans">
+
     <!-- Site Admin Top Breadcrumb & Header -->
     <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4 flex-shrink-0">
       <div class="flex items-center gap-3">
-        <UButton 
-          v-if="isSubPageActive" 
-          icon="i-heroicons-arrow-left" 
-          color="gray" 
-          variant="ghost" 
+        <UButton
+          v-if="isSubPageActive"
+          icon="i-heroicons-arrow-left"
+          color="gray"
+          variant="ghost"
           size="sm"
           @click="backToHub"
           class="hover:bg-slate-150 dark:hover:bg-slate-800"
@@ -27,14 +27,10 @@
     </div>
 
     <!-- MAIN PANEL VIEWPORT -->
-    <div class="flex-grow overflow-y-auto h-full min-h-0">
+    <div class="space-y-6">
       
       <!-- GRID LANDING PAGE: Site Admin Home Hub (GitLab Style) -->
       <div v-if="!isSubPageActive" class="space-y-6 pb-6">
-        <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-md text-xs text-slate-500 leading-relaxed max-w-4xl shadow-sm">
-          <strong>GitLab-style Administrative Hub:</strong> Welcome to the Northstar Admin Area. Select an operational cabinet block below to configure permissions, deploy hardware cabinets, map dynamic schemas, or test outbound notification broadcasters.
-        </div>
-
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <!-- Card 1: Users & Policies -->
           <div 

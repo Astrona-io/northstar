@@ -237,7 +237,7 @@
 
     <!-- Right Column Main Content Port -->
     <main 
-      :class="isSidebarCollapsed ? 'p-3' : 'p-6'" 
+      :class="isSidebarCollapsed ? 'px-3 pt-3 pb-2' : 'px-6 pt-6 pb-3'" 
       class="flex-1 overflow-y-auto h-screen bg-slate-100 dark:bg-slate-950 transition-all duration-300"
     >
       <div 
@@ -246,7 +246,7 @@
       >
         
         <!-- Global Northstar Onboarding Learning Checklist (Phase 5 Global Checklist) -->
-        <UCard v-if="showOnboarding" class="mb-6 border border-dashed border-primary-500 bg-primary-50/10 dark:bg-primary-950/10 rounded-md relative shadow-sm">
+        <UCard v-if="showOnboarding" class="mb-4 border border-dashed border-primary-500 bg-primary-50/10 dark:bg-primary-950/10 rounded-md relative shadow-sm">
           <div class="absolute top-4 right-4">
             <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="dismissOnboarding" />
           </div>
