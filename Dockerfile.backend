@@ -1,0 +1,56 @@
+# Multi-stage, cross-platform OCI build for Northstar Backend (Go Echo API)
+# Supports targeted cross-compilation for linux/amd64 and linux/arm64 architectures.
+
+# ==========================================
+# STAGE 1: Compilation
+# ==========================================
+FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
+
+WORKDIR /app
+
+# Install build prerequisites (CGO and musl compatibility required for SQLite)
+RUN apk add --no-cache git build-base musl-dev
+
+# Copy dependency manifests and pre-fetch modules for caching
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+
+# Copy backend source tree
+COPY backend/ ./
+
+# Dynamic multi-arch cross-compilation using Docker Buildx platforms
+ARG TARGETOS
+ARG TARGETARCH
+RUN CGO_ENABLED=1 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -ldflags="-s -w" -o /app/server cmd/server/main.go
+
+# ==========================================
+# STAGE 2: Minimal Runtime
+# ==========================================
+FROM alpine:3.19
+
+WORKDIR /app
+
+# Install runtime dependencies (SQLite requires glibc/musl compatibility)
+RUN apk add --no-cache ca-certificates tzdata musl-dev
+
+# Create data directory for database persistence
+RUN mkdir -p /app/data
+
+# Copy compiled binary from builder stage
+COPY --from=builder /app/server /app/server
+# Copy seed data / bootstrap taxonomy files (needed for bootstrap seeding)
+COPY .northstar-data/ /app/.northstar-data/
+
+# Secure execution port mapping
+EXPOSE 8000
+
+ENV PORT=8000
+ENV DATABASE_URL=/app/data/cmdb.db
+
+# Run as non-root user for security posture
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN chown -R appuser:appgroup /app
+USER appuser
+
+ENTRYPOINT ["/app/server"]

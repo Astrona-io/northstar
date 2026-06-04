@@ -60,6 +60,18 @@ The next generation of Northstar enhancements will target visual taxonomy linkag
 * **Details:**
   - **Geo-Mapping Canvas:** Integrate an interactive Leaflet.js or Mapbox world map. Draw geographical coordinates connecting datacenters, displaying active paths, undersea fiber cable outages, and Starlink gateway telemetry in real-time.
 
+### Phase 14: Administrative License Audit Ledger & Compliance Signatures Export
+* **Goal:** Enable corporate compliance officers to review and export legal license agreements signed by administrators on first-time login.
+* **Details:**
+  - **Compliance Sub-Tab:** Design a "Licensing & Compliance" sub-tab within the Site Administration cockpit that retrieves GORM `LicenseAgreement` records.
+  - **Audit Metadata Table:** Render signed operator usernames, roles, accepted license version numbers, and exact Unix timestamp details in a structured table, supporting direct CSV exports for compliance audits.
+
+### Phase 15: Cross-Platform Multi-Arch Containerization (amd64 + arm64)
+* **Goal:** Package the entire Northstar stack (Go Echo API + Nuxt 4 Frontend) into high-performance, single-command deployable OCI container images supporting dual-architecture (amd64 + arm64) execution.
+* **Details:**
+  - **Multi-Stage OCI Builds:** Author a relative Multi-Stage Dockerfile that builds the Go binary and Nuxt distribution, optimizing layer caching.
+  - **Graviton & Arm Optimization:** Support cross-compiling for AWS Graviton (production) and Raspberry Pi / Apple Silicon (local dev) environments.
+
 ---
 
 ## 🏛️ Completed Milestones Summary
@@ -73,3 +85,6 @@ The Northstar platform has been successfully developed, refactored, and verified
 5. **Advanced RBAC, Dynamic Custom Fields & SecOps Auditing:** Secured write/delete APIs with JWT authentication. Designed dynamic category attributes and tabs, CSV bulk inventory and cabling patch importers with inline regex pre-checks, active background TCP subnet scanners, asynchronous thread-safe webhook publishers (Slack/Jira), and AWS security compliance group visualizers.
 6. **Multi-Layer Verification, Real-Data E2E Test Suite & Diátaxis Developer Documentation:** Fully verified the codebase utilizing Go handler integration tests, Vitest component units, and a robust Playwright E2E browser test suite running against a dedicated E2E test database (`cmdb_e2e.db`). Bootstrapped a high-fidelity, Diátaxis-conforming MkDocs Material developer documentation portal (Phase 10) providing comprehensive tutorials, goal-oriented how-to recipes, REST API specifications, and Mermaid.js system architecture flowcharts fully aligned with Astrona corporate branding guidelines.
 7. **OpenTelemetry APM & Distributed Observability (OTel L3):** Engineered complete OpenTelemetry (OTel) Tracing SDK initialization into the server startup lifecycle (Phase 9). Built a custom, lightweight, highly optimized GORM database tracing plugin (`GormOTelPlugin`) that automatically hooks SQLite query and transaction execution callbacks, and enabled standard Echo HTTP request tracing middleware to map incoming endpoint traffic to backend trace Spans.
+8. **Responsive Collapsible Sidebar & Fluid Viewports (UI/UX L3):** Engineered an elegant, responsive vertical navigation sidebar that transitions between `w-72` (expanded) and `w-20` (collapsed) with smooth transition animations. Integrated right-aligned tooltip hovers (`UTooltip`) with conditional displays (`:prevent="!isSidebarCollapsed"`). Restructured the right-hand viewport so that the content padding and width are completely fluid (expanding from `max-w-[1500px]` up to `max-w-none` when collapsed) to maximize screen efficiency. Cleaned layout headers to remove the CMDB badge and prevent truncation of the "Northstar" brand name.
+9. **Automatic Floor Seeding & Interactive Level Selector (DCIM L3):** Configured GORM model lifecycle hooks to automatically seed "Floor 0" on datacenter creation, preventing blank states and layout height double scrollbar bugs. Exposed PUT floor update endpoints in Go to edit level numbers and floor names. Designed interactive Active Floor Level dropdown selectors, Rename (Alias), and Add Floor Level modal dialogs inside the administrator DCIM hub, fully covered by frontend and backend automated tests.
+10. **Administrative AGPLv3 Locked Agreement Flow (Legal Compliance L3):** Adopted the copyleft GNU AGPLv3 License with copyright assigned to Astrona (astrona.io). Built GORM models and JWT-verified endpoints to log administrator license signatures. Designed a secure, layout-level check that locks the on-screen modal, forcing first-time administrators to scroll through at least 80% of the license terms before unlocking the accept button. Refactored all 27 blocking browser `alert()` popups to modern, fluid, non-blocking Nuxt UI toast notifications.

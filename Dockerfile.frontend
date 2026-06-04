@@ -1,0 +1,44 @@
+# Multi-stage, cross-platform OCI build for Northstar Frontend (Nuxt 3 Node Server)
+# Supports multi-architecture (amd64 + arm64) execution with optimized cache layers.
+
+# ==========================================
+# STAGE 1: Nuxt Compiling
+# ==========================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependency manifests
+COPY frontend/package*.json ./
+
+# Install npm dependencies (npm ci respects exact package-lock versions)
+RUN npm ci
+
+# Copy frontend source tree
+COPY frontend/ ./
+
+# Compile production-grade Nitro node-server build
+ENV NODE_ENV=production
+RUN npm run build
+
+# ==========================================
+# STAGE 2: Tight Node Runtime
+# ==========================================
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
+
+# Copy compiled production build from builder stage
+COPY --from=builder /app/frontend/.output ./
+
+# Secure execution port mapping
+EXPOSE 3000
+
+# Run as non-root node user for container security
+USER node
+
+ENTRYPOINT ["node", "server/index.mjs"]

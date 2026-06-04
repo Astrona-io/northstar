@@ -1,0 +1,45 @@
+version: '3.8'
+
+# Multi-service local environment orchestration for Northstar CMDB.
+# Launches the Go Echo API and Nuxt 4 Node-Server side-by-side with local volume bindings.
+
+services:
+  northstar-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_URL=/app/data/cmdb.db
+      - OTEL_ENABLED=false
+    volumes:
+      # Persist SQLite database file locally in a named docker volume
+      - backend-data:/app/data
+    networks:
+      - northstar-network
+    restart: always
+
+  northstar-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NUXT_PUBLIC_API_BASE=http://localhost:8000/api
+      # Let the server-side requests talk directly to backend inside the docker network
+      - NUXT_API_BASE_INTERNAL=http://northstar-backend:8000/api
+    depends_on:
+      - northstar-backend
+    networks:
+      - northstar-network
+    restart: always
+
+volumes:
+  backend-data:
+
+networks:
+  northstar-network:
+    driver: bridge

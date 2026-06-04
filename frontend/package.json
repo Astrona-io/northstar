@@ -7,6 +7,7 @@
     "dev": "TMPDIR=/tmp nuxt dev",
     "generate": "TMPDIR=/tmp nuxt generate",
     "preview": "TMPDIR=/tmp nuxt preview",
+    "test": "vitest run",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
