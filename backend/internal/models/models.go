@@ -438,3 +438,19 @@ func (a *Asset) ComputeMaintenanceStatus() string {
 	}
 	return "none"
 }
+
+// LicenseAgreement represents an admin user's acceptance of a specific license version.
+type LicenseAgreement struct {
+	ID         string `gorm:"primaryKey;type:varchar(36)" json:"id"`
+	UserID     string `gorm:"index" json:"user_id"`
+	User       *User  `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Version    string `json:"version"`
+	AcceptedAt int64  `json:"accepted_at"`
+}
+
+func (m *LicenseAgreement) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
+	}
+	return
+}

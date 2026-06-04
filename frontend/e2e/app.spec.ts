@@ -36,16 +36,16 @@ function generateRealToken(username = 'admin', role = 'admin') {
 
 test.describe('UX Testing: CMDB Application', () => {
   test.beforeEach(async ({ context }) => {
-    const token = generateRealToken('admin', 'admin');
+    const token = generateRealToken('operator', 'operator');
     
-    // Seed authenticated cookie state so pages are accessible immediately (Phase 2 Auth E2E Stability)
+    // Seed authenticated cookie state as operator so pages are accessible immediately (Phase 2 Auth E2E Stability)
     await context.addCookies([
       {
         name: 'cmdb-session',
         value: JSON.stringify({
           token,
-          username: 'admin',
-          role: 'admin'
+          username: 'operator',
+          role: 'operator'
         }),
         domain: 'localhost',
         path: '/'
@@ -76,7 +76,7 @@ test.describe('UX Testing: CMDB Application', () => {
     await expect(page.locator('h3').filter({ hasText: 'Select Asset Type' })).not.toBeVisible();
   });
 
-  test('Successful Sign-in redirects to homepage and displays user session profile', async ({ context, page }) => {
+  test('Successful Sign-in as admin triggers license popup and accepts after scroll', async ({ context, page }) => {
     // Clear pre-seeded cookies to simulate starting unauthenticated
     await context.clearCookies();
 
@@ -84,24 +84,76 @@ test.describe('UX Testing: CMDB Application', () => {
     await page.goto('/login');
     await page.waitForTimeout(1000);
 
-    // Enter mock credentials
+    // Enter admin credentials
     await page.getByPlaceholder('admin, operator, or viewer').fill('admin');
     await page.getByPlaceholder('Enter password...').fill('admin');
 
     // Click submit
     await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForTimeout(2000);
+
+    // Verify redirection to home and that License Modal pops up immediately
+    await expect(page).toHaveURL('/');
+    const modalTitle = page.locator('h3').filter({ hasText: 'GNU Affero General Public License v3' });
+    await expect(modalTitle).toBeVisible();
+
+    // Verify "I Agree" button is disabled by default
+    const agreeBtn = page.getByRole('button', { name: 'I Agree & Accept AGPLv3 Terms' });
+    await expect(agreeBtn).toBeDisabled();
+
+    // Locate the scrollable license text container and scroll it down to 100%
+    const scrollContainer = page.locator('div.p-6.overflow-y-auto');
+    await scrollContainer.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      el.dispatchEvent(new Event('scroll'));
+    });
     await page.waitForTimeout(1000);
 
-    // Verify redirection to home and header state update
-    await expect(page).toHaveURL('/');
+    // Verify "I Agree" button is now enabled
+    await expect(agreeBtn).toBeEnabled();
+
+    // Click on I Agree to accept
+    await agreeBtn.click();
+    await page.waitForTimeout(2000);
+
+    // Verify modal is closed and they can see the signed admin profile
+    await expect(modalTitle).not.toBeVisible();
     await expect(page.locator('span').filter({ hasText: 'Signed Operator' })).toBeVisible();
     await expect(page.locator('span').filter({ hasText: 'admin' }).first()).toBeVisible();
   });
 
-  test('Settings page /settings/dcim loads correctly and displays room layout designer', async ({ page }) => {
+  test('Settings page /settings/dcim loads correctly and displays room layout designer', async ({ context, page }) => {
+    // Authenticate explicitly as admin for this admin-only settings view
+    const token = generateRealToken('admin', 'admin');
+    await context.addCookies([
+      {
+        name: 'cmdb-session',
+        value: JSON.stringify({
+          token,
+          username: 'admin',
+          role: 'admin'
+        }),
+        domain: 'localhost',
+        path: '/'
+      }
+    ]);
+
     // Go to settings/dcim
     await page.goto('/settings/dcim');
     await page.waitForTimeout(2000);
+
+    // If the license modal is visible, scroll and accept it first
+    const modalTitle = page.locator('h3').filter({ hasText: 'GNU Affero General Public License v3' });
+    if (await modalTitle.isVisible()) {
+      const scrollContainer = page.locator('div.p-6.overflow-y-auto');
+      await scrollContainer.evaluate((el) => {
+        el.scrollTop = el.scrollHeight;
+        el.dispatchEvent(new Event('scroll'));
+      });
+      await page.waitForTimeout(1000);
+      await page.getByRole('button', { name: 'I Agree & Accept AGPLv3 Terms' }).click();
+      await page.waitForTimeout(1000);
+    }
 
     // Click on Deploy New Location Profile button to trigger the Modal
     const openModalBtn = page.getByRole('button', { name: 'Deploy New Location Profile' });
