@@ -85,6 +85,9 @@ type DatacenterWall struct {
 	Y1                float64 `json:"y1"`
 	X2                float64 `json:"x2"`
 	Y2                float64 `json:"y2"`
+	Thickness         float64 `gorm:"default:8" json:"thickness"` // Thickness/stroke-width of the element
+	Type              string  `gorm:"default:'wall'" json:"type"` // Element type: 'wall', 'door', 'window'
+	Flipped           bool    `gorm:"default:false" json:"flipped"` // Reverses the opening/swing direction
 }
 
 func (m *DatacenterWall) BeforeCreate(tx *gorm.DB) (err error) {
