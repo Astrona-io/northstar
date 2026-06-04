@@ -1,0 +1,7 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Permission
+metadata:
+  name: catalog:write
+spec:
+  effect: allow
+  description: "Allow modifying standardized models inside the Device Catalog"

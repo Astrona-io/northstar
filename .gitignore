@@ -1,0 +1,27 @@
+# Python
+*.pyc
+.venv/
+__pycache__/
+
+# Databases
+*.db
+*.db-journal
+
+# OS files
+.DS_Store
+
+# Devbox
+.devbox/
+
+# Frontend (Nuxt 3)
+frontend/node_modules/
+frontend/.nuxt/
+frontend/.output/
+frontend/playwright-report/
+frontend/test-results/
+
+# Backend (Go)
+backend/bin/
+backend/*.exe
+backend/*.test
+backend/__debug_bin

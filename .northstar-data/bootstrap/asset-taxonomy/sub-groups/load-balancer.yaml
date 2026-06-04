@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Load Balancer
+  parentCategory: Network
+spec:
+  order: 60
+  icon: i-heroicons-scale
+  description: "Reverse proxy and network load distribution appliances"

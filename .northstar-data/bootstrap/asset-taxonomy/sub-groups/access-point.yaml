@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Access Point (AP)
+  parentCategory: Network
+spec:
+  order: 40
+  icon: i-heroicons-wifi
+  description: "Wireless access points or radio transmitters"

@@ -1,0 +1,8 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Category
+metadata:
+  name: Database
+spec:
+  order: 20
+  icon: i-heroicons-circle-stack
+  description: "Relational databases or storage engines"

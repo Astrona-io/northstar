@@ -1,0 +1,26 @@
+{
+  "name": "cmdb-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "TMPDIR=/tmp nuxt build",
+    "dev": "TMPDIR=/tmp nuxt dev",
+    "generate": "TMPDIR=/tmp nuxt generate",
+    "preview": "TMPDIR=/tmp nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@nuxt/ui": "^2.16.0",
+    "nuxt": "^4.4.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@nuxt/test-utils": "^4.0.3",
+    "@playwright/test": "^1.60.0",
+    "@vue/test-utils": "^2.4.10",
+    "happy-dom": "^20.9.0",
+    "playwright": "^1.60.0",
+    "vitest": "^4.1.8"
+  }
+}

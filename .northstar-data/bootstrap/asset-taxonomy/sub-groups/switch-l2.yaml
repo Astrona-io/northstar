@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Switch (L2)
+  parentCategory: Network
+spec:
+  order: 20
+  icon: i-heroicons-arrows-right-left
+  description: "Layer-2 switching distribution frames"

@@ -1,0 +1,6 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Group
+metadata:
+  name: Administrators
+spec:
+  description: "Root system administrators with global read/write/delete permissions"

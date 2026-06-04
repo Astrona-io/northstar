@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Edge Gateway (e.g. Pi/Jetson)
+  parentCategory: IoT / Edge
+spec:
+  order: 10
+  icon: i-heroicons-cpu-chip
+  description: "Raspberry Pi, Jetson Nano, industrial gateways"

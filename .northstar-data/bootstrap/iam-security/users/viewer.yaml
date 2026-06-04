@@ -1,0 +1,7 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: User
+metadata:
+  name: viewer
+spec:
+  password: viewer
+  role: viewer

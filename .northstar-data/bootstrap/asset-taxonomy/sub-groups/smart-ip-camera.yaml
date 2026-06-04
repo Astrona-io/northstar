@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Smart IP Camera
+  parentCategory: IoT / Edge
+spec:
+  order: 30
+  icon: i-heroicons-video-camera
+  description: "Surveillance cameras, streams, security loops"

@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Environment IoT Sensor
+  parentCategory: IoT / Edge
+spec:
+  order: 40
+  icon: i-heroicons-sun
+  description: "Temperature loop, humidity, air quality sensors"

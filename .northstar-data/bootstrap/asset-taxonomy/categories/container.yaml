@@ -1,0 +1,8 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Category
+metadata:
+  name: Container
+spec:
+  order: 60
+  icon: i-heroicons-cube
+  description: "Standalone containers, AWS Fargate tasks, Docker"

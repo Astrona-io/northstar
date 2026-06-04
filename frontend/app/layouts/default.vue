@@ -1,0 +1,420 @@
+<template>
+  <div class="flex h-screen bg-slate-100 dark:bg-slate-950 overflow-hidden font-sans">
+    
+    <!-- Left Sidebar (GitLab / Gitea Vertical Navigation Sidebar) -->
+    <aside class="w-64 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between h-screen p-4 flex-shrink-0 shadow-sm">
+      
+      <!-- Top Portion: Logo & Standard Navigation -->
+      <div class="space-y-6">
+        <!-- Logo Branding (Forgejo Style) -->
+        <div class="flex items-center gap-3 px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <UIcon name="i-heroicons-sparkles" class="h-6 w-6 text-primary-500" />
+          <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white font-mono">
+            Northstar
+          </h1>
+          <span class="text-[9px] font-bold text-primary-600 dark:text-primary-400 bg-primary-100/50 dark:bg-primary-950/50 px-1.5 py-0.5 rounded uppercase font-mono">CMDB</span>
+        </div>
+
+        <!-- Standard Operational Navigation List -->
+        <nav class="space-y-1">
+          <UButton 
+            to="/" 
+            variant="ghost" 
+            color="gray" 
+            block 
+            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
+            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
+            icon="i-heroicons-rectangle-stack"
+          >
+            Assets
+          </UButton>
+          
+          <UButton 
+            to="/dcim" 
+            variant="ghost" 
+            color="gray" 
+            block 
+            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
+            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
+            icon="i-heroicons-server"
+          >
+            Datacenters
+          </UButton>
+          
+          <UButton 
+            to="/topology" 
+            variant="ghost" 
+            color="gray" 
+            block 
+            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
+            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
+            icon="i-heroicons-globe-alt"
+          >
+            Topology
+          </UButton>
+          
+          <UButton 
+            to="/devices" 
+            variant="ghost" 
+            color="gray" 
+            block 
+            active-class="bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-bold border-l-4 border-primary-500 rounded-none" 
+            class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs border-l-4 border-transparent"
+            icon="i-heroicons-cpu-chip"
+          >
+            Device Catalog
+          </UButton>
+        </nav>
+      </div>
+
+      <!-- Bottom Portion: Separated Site Admin & User Controls (Phase 1 Admin Re-org) -->
+      <div class="space-y-4 border-t border-slate-200 dark:border-slate-800 pt-4">
+        
+        <!-- GitOps Exporter Button (Phase 1 GitOps YAML Generator) -->
+        <UButton 
+          variant="ghost" 
+          color="gray" 
+          block 
+          @click="isGitOpsDrawerOpen = true"
+          class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 border-l-4 border-transparent"
+          icon="i-heroicons-code-bracket-square"
+        >
+          GitOps YAML Exporter
+        </UButton>
+
+        <!-- Site Admin button (Anchored at the bottom separately, GitLab style) -->
+        <UButton 
+          v-if="isAdmin" 
+          to="/settings" 
+          variant="ghost" 
+          color="gray" 
+          block 
+          active-class="bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 font-bold border-l-4 border-red-500 rounded-none" 
+          class="justify-start text-left px-3 py-2.5 rounded-md transition-all text-xs text-red-600 dark:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 border-l-4 border-transparent"
+          icon="i-heroicons-shield-check"
+        >
+          Site Admin
+        </UButton>
+
+        <!-- Session Profile Card -->
+        <div v-if="isAuthenticated" class="space-y-3 bg-white dark:bg-slate-900 p-3 rounded-md border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div class="flex items-center justify-between gap-2">
+            <div class="truncate flex-1">
+              <span class="text-[9px] text-slate-400 uppercase font-bold block leading-none mb-1 font-mono">Signed Operator</span>
+              <span class="text-xs font-semibold text-slate-800 dark:text-white truncate block">{{ user.username }}</span>
+            </div>
+            <UBadge :color="isAdmin ? 'red' : (isOperator ? 'blue' : 'gray')" size="xs" variant="subtle" class="uppercase text-[8px] font-bold font-mono">{{ user.role }}</UBadge>
+          </div>
+          
+          <div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 pt-2">
+            <!-- Theme Toggle -->
+            <ClientOnly>
+              <UButton
+                :icon="isDark ? 'i-heroicons-moon-20-solid' : 'i-heroicons-sun-20-solid'"
+                color="gray"
+                variant="ghost"
+                size="xs"
+                @click="isDark = !isDark"
+              />
+              <template #fallback>
+                <div class="w-6 h-6" />
+              </template>
+            </ClientOnly>
+            
+            <UButton 
+              size="xs" 
+              variant="ghost" 
+              color="red" 
+              icon="i-heroicons-arrow-right-start-on-rectangle" 
+              label="Sign Out" 
+              class="text-[10px] px-2 py-1 hover:bg-red-50 dark:hover:bg-red-950/20"
+              @click="logout" 
+            />
+          </div>
+        </div>
+
+        <UButton v-else to="/login" block size="sm" variant="outline" icon="i-heroicons-arrow-right-end-on-rectangle">
+          Sign In
+        </UButton>
+      </div>
+    </aside>
+
+    <!-- Right Column Main Content Port -->
+    <main class="flex-1 overflow-y-auto h-screen p-8 bg-slate-100 dark:bg-slate-950">
+      <div class="max-w-7xl mx-auto">
+        
+        <!-- Global Northstar Onboarding Learning Checklist (Phase 5 Global Checklist) -->
+        <UCard v-if="showOnboarding" class="mb-6 border border-dashed border-primary-500 bg-primary-50/10 dark:bg-primary-950/10 rounded-md relative shadow-sm">
+          <div class="absolute top-4 right-4">
+            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="dismissOnboarding" />
+          </div>
+          <div class="flex gap-4 items-start pr-8">
+            <UIcon name="i-heroicons-academic-cap" class="h-10 w-10 text-primary-500 animate-bounce flex-shrink-0" />
+            <div class="space-y-2 w-full">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 font-mono">
+                Northstar Quickstart: Your Guided Learning Path
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-normal">
+                Welcome to Northstar! Follow this interactive onboarding checklist to successfully model your environment. Steps are checked off automatically in real-time as you config the platform across all pages.
+              </p>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-3">
+                <!-- Step 1: DC & Rack -->
+                <button 
+                  type="button" 
+                  @click="navigateTo('/settings/dcim')" 
+                  class="flex items-center gap-3 px-3 py-2 bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 hover:border-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800/55 text-left w-full transition-all cursor-pointer group"
+                >
+                  <UIcon :name="step3Done ? 'i-heroicons-check-circle' : 'i-heroicons-minus-circle'" :class="step3Done ? 'text-green-500' : 'text-slate-400 group-hover:text-primary-500'" class="h-5 w-5 flex-shrink-0 transition-colors" />
+                  <span class="text-xs leading-none" :class="step3Done ? 'line-through text-slate-400' : 'font-semibold text-slate-700 dark:text-slate-200 group-hover:text-primary-500 transition-colors'">1. Define DC & Rack</span>
+                </button>
+
+                <!-- Step 2: Register Brand -->
+                <button 
+                  type="button" 
+                  @click="navigateTo('/devices')" 
+                  class="flex items-center gap-3 px-3 py-2 bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 hover:border-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800/55 text-left w-full transition-all cursor-pointer group"
+                >
+                  <UIcon :name="step1Done ? 'i-heroicons-check-circle' : 'i-heroicons-minus-circle'" :class="step1Done ? 'text-green-500' : 'text-slate-400 group-hover:text-primary-500'" class="h-5 w-5 flex-shrink-0 transition-colors" />
+                  <span class="text-xs leading-none" :class="step1Done ? 'line-through text-slate-400' : 'font-semibold text-slate-700 dark:text-slate-200 group-hover:text-primary-500 transition-colors'">2. Register Brand</span>
+                </button>
+
+                <!-- Step 3: Define Spec -->
+                <button 
+                  type="button" 
+                  @click="navigateTo('/devices')" 
+                  class="flex items-center gap-3 px-3 py-2 bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 hover:border-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800/55 text-left w-full transition-all cursor-pointer group"
+                >
+                  <UIcon :name="step2Done ? 'i-heroicons-check-circle' : 'i-heroicons-minus-circle'" :class="step2Done ? 'text-green-500' : 'text-slate-400 group-hover:text-primary-500'" class="h-5 w-5 flex-shrink-0 transition-colors" />
+                  <span class="text-xs leading-none" :class="step2Done ? 'line-through text-slate-400' : 'font-semibold text-slate-700 dark:text-slate-200 group-hover:text-primary-500 transition-colors'">3. Define Spec Model</span>
+                </button>
+
+                <!-- Step 4: Asset Mount -->
+                <button 
+                  type="button" 
+                  @click="navigateTo('/')" 
+                  class="flex items-center gap-3 px-3 py-2 bg-white dark:bg-slate-900 rounded-md shadow-sm border border-slate-200 dark:border-slate-800 hover:border-primary-500 hover:bg-slate-50 dark:hover:bg-slate-800/55 text-left w-full transition-all cursor-pointer group"
+                >
+                  <UIcon :name="step4Done ? 'i-heroicons-check-circle' : 'i-heroicons-minus-circle'" :class="step4Done ? 'text-green-500' : 'text-slate-400 group-hover:text-primary-500'" class="h-5 w-5 flex-shrink-0 transition-colors" />
+                  <span class="text-xs leading-none" :class="step4Done ? 'line-through text-slate-400' : 'font-semibold text-slate-700 dark:text-slate-200 group-hover:text-primary-500 transition-colors'">4. Mount First Asset</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </UCard>
+
+        <slot />
+      </div>
+    </main>
+
+    <!-- GitOps YAML Exporter Drawer (Phase 1 GitOps Reconciliation) -->
+    <USlideover v-model="isGitOpsDrawerOpen" :overlay="true" class="z-50">
+      <div class="h-full flex flex-col bg-slate-50 dark:bg-slate-900 shadow-xl overflow-hidden font-sans">
+        <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 flex-shrink-0">
+          <div>
+            <h3 class="font-bold text-slate-900 dark:text-white font-mono flex items-center gap-2">
+              <UIcon name="i-heroicons-code-bracket-square" class="h-5 w-5 text-blue-500" />
+              GitOps Spec Generator
+            </h3>
+            <span class="text-[10px] text-slate-500">Generate valid declarative YAML manifests</span>
+          </div>
+          <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isGitOpsDrawerOpen = false" />
+        </div>
+        
+        <div class="p-4 flex-1 overflow-y-auto space-y-6">
+          <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+            Northstar's Declarative Reconciliation Engine automatically syncs YAML specifications from Git repositories or local PVC mounts to the GORM database. Use these templates to declare state safely.
+          </p>
+
+          <UFormGroup label="Resource Target Kind" class="text-xs font-semibold">
+            <USelect v-model="gitOpsKind" :options="['Asset', 'Datacenter']" />
+          </UFormGroup>
+
+          <UFormGroup v-if="gitOpsKind === 'Asset'" label="Specific Hardware Category" class="text-xs font-semibold">
+            <USelect v-model="gitOpsAssetCategory" :options="['Server', 'Router', 'Switch', 'Container']" />
+          </UFormGroup>
+          
+          <div class="relative group mt-2">
+            <div class="absolute top-2 right-2 z-10 flex gap-2">
+              <UButton size="xs" color="gray" variant="solid" icon="i-heroicons-clipboard-document" @click="copyYaml">Copy YAML</UButton>
+            </div>
+            <pre class="bg-slate-950 text-slate-300 p-4 rounded-md text-[10px] sm:text-xs overflow-x-auto border border-slate-800 font-mono shadow-inner leading-relaxed"><code>{{ generatedYamlSpec }}</code></pre>
+          </div>
+        </div>
+
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 text-[10px] text-slate-500 font-mono flex-shrink-0">
+          Mount to <code>/etc/astrona/gitops/*.yaml</code> for background sync
+        </div>
+      </div>
+    </USlideover>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue'
+
+const colorMode = useColorMode()
+const { user, isAuthenticated, isAdmin, isOperator, logout } = useAuth()
+const route = useRoute()
+
+// Global Checklist Logic (Phase 5)
+const { fetchAssets } = useAssets()
+const { fetchManufacturers, fetchDevices } = useDevices()
+const { fetchRacks } = useDCIM()
+
+const showOnboarding = ref(true)
+const step1Done = ref(false)
+const step2Done = ref(false)
+const step3Done = ref(false)
+const step4Done = ref(false)
+
+const checkOnboardingProgress = async () => {
+  if (!isAuthenticated.value) return
+
+  try {
+    const { data: brands } = await fetchManufacturers()
+    step1Done.value = brands.value && brands.value.length > 0
+
+    const { data: models } = await fetchDevices()
+    step2Done.value = models.value && models.value.length > 0
+
+    const { data: racks } = await fetchRacks()
+    step3Done.value = racks.value && racks.value.length > 0
+
+    const { data: assets } = await fetchAssets({ limit: 1 })
+    step4Done.value = assets.value && assets.value.length > 0
+
+    if (step1Done.value && step2Done.value && step3Done.value && step4Done.value) {
+      showOnboarding.value = false
+    }
+  } catch (err) {
+    console.error('Failed to parse onboarding checklist state:', err)
+  }
+}
+
+onMounted(() => {
+  checkOnboardingProgress()
+})
+
+// Re-check progress whenever the route changes (simulating a global event listener)
+watch(() => route.path, () => {
+  if (showOnboarding.value) {
+    checkOnboardingProgress()
+  }
+})
+
+const dismissOnboarding = () => {
+  showOnboarding.value = false
+}
+
+const isDark = computed({
+  get () {
+    return colorMode.value === 'dark'
+  },
+  set () {
+    colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+  }
+})
+
+// GitOps YAML Spec Generator Logic
+const isGitOpsDrawerOpen = ref(false)
+const gitOpsKind = ref('Asset')
+const gitOpsAssetCategory = ref('Server')
+
+const generatedYamlSpec = computed(() => {
+  if (gitOpsKind.value === 'Datacenter') {
+    return `apiVersion: network.astrona.io/v1alpha1
+kind: Datacenter
+metadata:
+  name: dublin-hq
+spec:
+  type: homelab
+  country: Ireland
+  city: Dublin
+  properties:
+    uplink_speed: "2.5 Gbps Fiber"
+    public_ip: "85.12.85.112"
+  floors:
+    - name: "Basement Level"
+      level: -1
+      width: 800
+      depth: 1200
+  racks:
+    - name: "Rack-A01"
+      height_u: 42
+      placement_zone: "Aisle 1"
+      floor_level: -1
+      x: 100
+      y: 200`
+  }
+
+  // Asset configurations based on category
+  if (gitOpsAssetCategory.value === 'Router') {
+    return `apiVersion: network.astrona.io/v1alpha1
+kind: Asset
+metadata:
+  name: edge-router-01
+spec:
+  type: Network
+  status: active
+  ip_address: 10.0.0.1
+  description: "Primary Edge BGP Router"
+  properties:
+    network_subtype: "Router"
+    bgp_asn: 65001
+    throughput: "10 Gbps"
+  interfaces:
+    - name: "GigabitEthernet0/0"
+      type: "fiber"
+      mac_address: "AA:BB:CC:DD:EE:01"
+      ip_address: "85.12.85.112"
+      link_speed: "10000"
+      mtu: 9000
+      vlan_id: 100
+  relationships:
+    downlinks:
+      - "core-switch-01"`
+  }
+
+  if (gitOpsAssetCategory.value === 'Container') {
+    return `apiVersion: network.astrona.io/v1alpha1
+kind: Asset
+metadata:
+  name: redis-cache-cluster
+spec:
+  type: Container
+  status: active
+  description: "Ephemeral Redis cache nodes"
+  properties:
+    image: "redis:7.2-alpine"
+    runtime: "docker"
+    ports: "6379"
+  host_asset_name: "docker-worker-01" # Mounts container to host server`
+  }
+
+  // Default Server
+  return `apiVersion: network.astrona.io/v1alpha1
+kind: Asset
+metadata:
+  name: esxi-host-01
+spec:
+  type: Server
+  status: active
+  ip_address: 192.168.1.10
+  description: "Hypervisor virtualization host"
+  properties:
+    cpu_model: "AMD EPYC 7003"
+    ram_gb: "256"
+    os: "VMware ESXi 8.0"
+    warranty_expiry: "2029-01-01"
+  rack_name: "Rack-A01"
+  rack_position_u: 15`
+})
+
+const copyYaml = () => {
+  navigator.clipboard.writeText(generatedYamlSpec.value)
+  alert('GitOps YAML spec copied to clipboard!')
+}
+</script>
+>

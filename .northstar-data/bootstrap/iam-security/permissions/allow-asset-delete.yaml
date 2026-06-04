@@ -1,0 +1,7 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Permission
+metadata:
+  name: asset:delete
+spec:
+  effect: allow
+  description: "Allow deleting and decommissioning CMDB Assets"

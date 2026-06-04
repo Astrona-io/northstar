@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Industrial PLC / SCADA
+  parentCategory: IoT / Edge
+spec:
+  order: 20
+  icon: i-heroicons-bolt
+  description: "Programmable Logic Controllers and telemetry lines"

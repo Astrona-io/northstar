@@ -1,0 +1,8 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Category
+metadata:
+  name: Kubernetes Deployment
+spec:
+  order: 50
+  icon: i-heroicons-square-3-stack-3d
+  description: "Clustered pods, replica specs, cloud workloads"

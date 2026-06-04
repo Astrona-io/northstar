@@ -1,0 +1,8 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Category
+metadata:
+  name: IoT / Edge
+spec:
+  order: 70
+  icon: i-heroicons-device-tablet
+  description: "Edge gateways, Raspberry Pi, Industrial PLCs, IP Cameras, or Sensors"

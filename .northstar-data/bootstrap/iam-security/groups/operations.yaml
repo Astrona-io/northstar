@@ -1,0 +1,6 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Group
+metadata:
+  name: Operations Group
+spec:
+  description: "Operations staff with asset read/write permissions"

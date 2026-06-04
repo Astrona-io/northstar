@@ -1,0 +1,9 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: SubGroup
+metadata:
+  name: Switch (L3)
+  parentCategory: Network
+spec:
+  order: 30
+  icon: i-heroicons-arrows-pointing-out
+  description: "Layer-3 switching with IP routing protocols"

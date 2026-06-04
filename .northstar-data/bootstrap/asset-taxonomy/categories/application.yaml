@@ -1,0 +1,8 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Category
+metadata:
+  name: Application
+spec:
+  order: 40
+  icon: i-heroicons-window
+  description: "Software apps, microservices, platforms"

@@ -1,0 +1,7 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Permission
+metadata:
+  name: asset:write
+spec:
+  effect: allow
+  description: "Allow creating and modifying CMDB Assets"

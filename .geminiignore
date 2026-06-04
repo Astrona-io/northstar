@@ -1,0 +1,10 @@
+# Directories to ignore to save Gemini context tokens
+node_modules/
+.nuxt/
+.output/
+.venv/
+backend_python_backup/
+.devbox/
+dist/
+build/
+.git/

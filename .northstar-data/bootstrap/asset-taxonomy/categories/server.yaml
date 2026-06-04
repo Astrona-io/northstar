@@ -1,0 +1,8 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Category
+metadata:
+  name: Server
+spec:
+  order: 10
+  icon: i-heroicons-server
+  description: "Compute server racks, blades, or VMs"

@@ -1,0 +1,16 @@
+{
+  "packages": [
+    "python@3.14",
+    "poetry@latest",
+    "nodejs@24"
+  ],
+  "shell": {
+    "init_hook": [
+      "echo 'Devbox environment for Northstar CMDB project loaded.'"
+    ],
+    "scripts": {
+      "install": "cd backend && poetry install && cd ../frontend && npm install && cd ..",
+      "start": "./start.sh"
+    }
+  }
+}

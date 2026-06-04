@@ -1,0 +1,8 @@
+apiVersion: network.northstar.astrona.io/v1alpha1
+kind: Category
+metadata:
+  name: Network
+spec:
+  order: 30
+  icon: i-heroicons-arrows-right-left
+  description: "Routers, Switches, Access Points, Firewalls, or Balancers"
