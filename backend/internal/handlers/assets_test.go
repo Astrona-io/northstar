@@ -42,6 +42,7 @@ func setupTestDB() {
 		&models.Rack{},
 		&models.CustomField{},
 		&models.Webhook{},
+		&models.LicenseAgreement{},
 	)
 	database.DB = db
 }

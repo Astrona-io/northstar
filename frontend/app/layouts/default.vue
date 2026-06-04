@@ -3,7 +3,7 @@
     
     <!-- Left Sidebar (GitLab / Gitea Vertical Navigation Sidebar) -->
     <aside 
-      :class="isSidebarCollapsed ? 'w-20' : 'w-64'" 
+      :class="isSidebarCollapsed ? 'w-20' : 'w-72'" 
       class="bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between h-screen p-4 flex-shrink-0 shadow-sm transition-all duration-300 ease-in-out"
     >
       
@@ -206,6 +206,29 @@
             <span v-if="!isSidebarCollapsed">Sign In</span>
           </UButton>
         </UTooltip>
+
+        <!-- Muted Footer (Astrona Branding Requirements) -->
+        <div class="pt-3 border-t border-slate-200 dark:border-slate-800 text-[10px] text-slate-400 dark:text-slate-500 font-sans space-y-1.5 mt-2 shrink-0">
+          <p v-if="!isSidebarCollapsed" class="leading-relaxed">
+            Northstar <span class="font-semibold text-slate-500 font-mono">{{ appVersion }}</span> &ndash; Owned by <a href="https://astrona.io" target="_blank" class="hover:underline hover:text-primary-500 font-semibold font-mono">Astrona.io</a>
+          </p>
+          <div :class="isSidebarCollapsed ? 'flex flex-col gap-1.5 items-center text-center' : 'flex items-center gap-2 justify-between'" class="flex">
+            <!-- License Link (Triggering Modal) -->
+            <UTooltip text="GNU AGPLv3 License" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }">
+              <button @click="openLicenseModal" class="hover:underline hover:text-primary-500 flex items-center gap-1 text-left">
+                <UIcon name="i-heroicons-document-text" class="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                <span v-if="!isSidebarCollapsed">GNU AGPLv3</span>
+              </button>
+            </UTooltip>
+            <!-- GitHub Link (Corrected URL) -->
+            <UTooltip text="GitHub Repository" :prevent="!isSidebarCollapsed" :popper="{ placement: 'right' }">
+              <a href="https://github.com/Astrona-io/northstar" target="_blank" class="hover:underline hover:text-primary-500 flex items-center gap-1">
+                <UIcon name="i-heroicons-code-bracket" class="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500" />
+                <span v-if="!isSidebarCollapsed">GitHub Repo</span>
+              </a>
+            </UTooltip>
+          </div>
+        </div>
       </div>
     </aside>
 
@@ -324,6 +347,60 @@
       </div>
     </USlideover>
 
+    <!-- GNU AGPLv3 License Modal Dialog -->
+    <UModal v-model="isLicenseModalOpen" :ui="{ width: 'sm:max-w-4xl' }" :prevent-close="showAgreementButton">
+      <UCard :ui="{ body: { padding: 'p-0' } }">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col gap-1">
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white font-mono flex items-center gap-2">
+                <UIcon name="i-heroicons-document-text" class="text-primary-500 h-5 w-5" />
+                GNU Affero General Public License v3 (AGPLv3)
+              </h3>
+              <span class="text-[10px] text-slate-400 dark:text-slate-500 font-mono pl-7">
+                Last updated: June 4, 2026 (Adopted AGPLv3)
+              </span>
+            </div>
+            <UButton v-if="!showAgreementButton" color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="isLicenseModalOpen = false" />
+          </div>
+        </template>
+        
+        <div 
+          @scroll="onLicenseScroll"
+          class="p-6 overflow-y-auto max-h-[60vh] bg-slate-950 text-slate-300 font-mono text-[11px] leading-relaxed rounded-b-md whitespace-pre-wrap"
+        >
+          <div v-if="isLoadingLicense" class="flex justify-center p-8">
+            <UIcon name="i-heroicons-arrow-path" class="animate-spin h-6 w-6 text-primary-500" />
+          </div>
+          <div v-else>
+            {{ licenseText }}
+          </div>
+        </div>
+
+        <template v-if="showAgreementButton" #footer>
+          <div class="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-b-md">
+            <div class="flex items-start gap-2 max-w-xl">
+              <UIcon name="i-heroicons-information-circle" class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-normal font-sans">
+                As an Administrator, you are signing this binding copyleft agreement on behalf of your deployment. Access to the CMDB administration systems requires active AGPLv3 compliance registration.
+              </p>
+            </div>
+            <UButton 
+              color="green" 
+              icon="i-heroicons-check-circle"
+              :loading="isSavingAgreement"
+              :disabled="!hasReadLicense"
+              @click="submitAcceptLicense"
+              class="font-bold shrink-0 shadow-sm"
+              :class="hasReadLicense ? 'animate-pulse' : 'opacity-50 cursor-not-allowed'"
+            >
+              I Agree & Accept AGPLv3 Terms
+            </UButton>
+          </div>
+        </template>
+      </UCard>
+    </UModal>
+
   </div>
 </template>
 
@@ -332,8 +409,118 @@ import { ref, computed, onMounted, watch } from 'vue'
 
 const colorMode = useColorMode()
 const isSidebarCollapsed = ref(false)
-const { user, isAuthenticated, isAdmin, isOperator, logout } = useAuth()
+
+const isLicenseModalOpen = ref(false)
+const isLoadingLicense = ref(false)
+const licenseText = ref('')
+const hasReadLicense = ref(false)
+
+const showAgreementButton = ref(false)
+const isSavingAgreement = ref(false)
+
+const appVersion = computed(() => {
+  return import.meta.dev ? 'v0.0.0-dev' : 'v0.0.1'
+})
+
+const onLicenseScroll = (event) => {
+  const el = event.target
+  const scrollHeight = el.scrollHeight - el.clientHeight
+  if (scrollHeight <= 0) {
+    hasReadLicense.value = true
+    return
+  }
+  const scrollPercentage = (el.scrollTop / scrollHeight) * 100
+  if (scrollPercentage >= 80) {
+    hasReadLicense.value = true
+  }
+}
+
+const openLicenseModal = async () => {
+  isLicenseModalOpen.value = true
+  if (showAgreementButton.value) {
+    hasReadLicense.value = false
+  } else {
+    hasReadLicense.value = true
+  }
+  
+  if (!licenseText.value) {
+    isLoadingLicense.value = true
+    try {
+      licenseText.value = await $fetch('/LICENSE', { parseResponse: txt => txt })
+    } catch (err) {
+      console.error('Failed to load license text:', err)
+      licenseText.value = 'GNU Affero General Public License v3 (AGPLv3) - Copyright (C) 2026 Astrona (astrona.io)'
+    } finally {
+      isLoadingLicense.value = false
+    }
+  }
+}
+
+const { user, isAuthenticated, isAdmin, isOperator, logout, getAuthHeader } = useAuth()
 const route = useRoute()
+
+const checkLicenseAgreementStatus = async () => {
+  if (!isAuthenticated.value || !isAdmin.value) return
+
+  const runtimeConfig = useRuntimeConfig()
+  const apiBase = runtimeConfig.public.apiBase
+
+  try {
+    const res = await $fetch(`${apiBase}/license/status`, {
+      headers: getAuthHeader()
+    })
+    if (res && !res.accepted) {
+      showAgreementButton.value = true
+      await openLicenseModal()
+    } else {
+      showAgreementButton.value = false
+    }
+  } catch (err) {
+    console.error('Failed to check license agreement status:', err)
+  }
+}
+
+const submitAcceptLicense = async () => {
+  isSavingAgreement.value = true
+  const runtimeConfig = useRuntimeConfig()
+  const apiBase = runtimeConfig.public.apiBase
+
+  try {
+    await $fetch(`${apiBase}/license/accept`, {
+      method: 'POST',
+      headers: getAuthHeader()
+    })
+    showAgreementButton.value = false
+    isLicenseModalOpen.value = false
+    
+    const toast = useToast()
+    toast.add({
+      title: 'Agreement Registered',
+      description: 'AGPLv3 License Agreement accepted and logged successfully.',
+      color: 'green',
+      icon: 'i-heroicons-check-circle'
+    })
+  } catch (err) {
+    console.error('Failed to accept license:', err)
+    const toast = useToast()
+    toast.add({
+      title: 'Registration Failed',
+      description: 'Failed to register license agreement. Please try again.',
+      color: 'red',
+      icon: 'i-heroicons-x-circle'
+    })
+  } finally {
+    isSavingAgreement.value = false
+  }
+}
+
+onMounted(() => {
+  checkLicenseAgreementStatus()
+})
+
+watch([isAuthenticated, isAdmin], () => {
+  checkLicenseAgreementStatus()
+})
 
 // Global Checklist Logic (Phase 5)
 const { fetchAssets } = useAssets()

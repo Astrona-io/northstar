@@ -136,6 +136,12 @@ func RegisterRoutes(e *echo.Echo) {
 	e.GET("/api/monitoring/ping", handlers.GetLatencyPing)
 	e.GET("/api/monitoring/ping/", handlers.GetLatencyPing)
 
+	// Administrative License Agreement Routes (AGPLv3 Compliance)
+	e.GET("/api/license/status", handlers.GetLicenseStatus, pAssetWrite)
+	e.GET("/api/license/status/", handlers.GetLicenseStatus, pAssetWrite)
+	e.POST("/api/license/accept", handlers.AcceptLicense, pAssetWrite)
+	e.POST("/api/license/accept/", handlers.AcceptLicense, pAssetWrite)
+
 	// Datacenter & Rack Unit DCIM Routes (Phase 6 DCIM Mapping)
 	e.GET("/api/datacenter-types", handlers.ReadDatacenterTypes)
 	e.GET("/api/datacenter-types/", handlers.ReadDatacenterTypes)

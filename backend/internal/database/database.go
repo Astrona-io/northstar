@@ -76,6 +76,7 @@ func InitDB() (*gorm.DB, error) {
 		&models.DatacenterWall{},
 		&models.Datacenter{},
 		&models.Rack{},
+		&models.LicenseAgreement{},
 	)
 	if err != nil {
 		return nil, err
