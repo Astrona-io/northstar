@@ -56,6 +56,26 @@ chmod +x start.sh
 
 ---
 
+## ⚡ Simplified Unified Commands (`just`)
+
+If you have [just](https://github.com/casey/just) installed on your system, you can use these simple, intuitive shortcuts directly from the project root:
+
+### Running Servers
+* **Start Backend Server:** `just backend` (Runs Go REST API on port `8000`)
+* **Start Frontend Dashboard:** `just frontend` (Runs Nuxt 3 dev server on port `3000`)
+
+### Running Tests
+* **Backend Unit & Integration Tests:** `just test-backend` (Go tests)
+* **Frontend Component Unit Tests:** `just test-frontend` (Vitest unit tests)
+* **End-to-End E2E Browser Tests:** `just test-e2e` (Playwright tests on a real E2E database)
+
+### Developer Documentation (MkDocs)
+* **Setup Documentation Packages:** `just docs-setup` (Installs MkDocs Material)
+* **Start Documentation Live Preview:** `just docs-serve` (Starts hot-reloading server on port `8000`)
+* **Build Documentation Site:** `just docs-build` (Compiles optimized HTML static files)
+
+---
+
 ## 💻 Manual Execution (Separate Terminals)
 
 If you prefer to run them in separate terminal windows (useful for debugging):
@@ -102,6 +122,30 @@ To open the last HTML test report generated:
 ```bash
 cd frontend
 npx playwright show-report
+```
+
+---
+
+## 📖 Developer Documentation (MkDocs)
+
+We maintain high-fidelity, Diátaxis-conforming developer documentation built using **MkDocs** and the **Material for MkDocs** theme.
+
+### Run the Documentation Preview Locally
+
+1. **Install Prerequisites:** Ensure you have Python installed, then install MkDocs Material:
+   ```bash
+   pip install mkdocs-material
+   ```
+2. **Start Hot-Reloading Server:** Launch the local development preview server:
+   ```bash
+   mkdocs serve
+   ```
+3. **Access Documentation:** Open your browser and navigate to **`http://127.0.0.1:8000`**. Any edits made to files inside the `docs/` folder will hot-reload instantly!
+
+### Build Documentation for Production
+Compile the markdown source files into a static, optimized HTML production build inside the `site/` folder:
+```bash
+mkdocs build
 ```
 
 ---
