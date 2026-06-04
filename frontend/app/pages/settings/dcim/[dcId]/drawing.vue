@@ -83,7 +83,7 @@
                 block
                 size="sm" 
                 :color="cadToolMode === 'racks' ? 'primary' : 'gray'" 
-                variant="subtle" 
+                variant="soft" 
                 icon="i-heroicons-server" 
                 @click="cadToolMode = 'racks'"
                 class="justify-start font-medium"
@@ -94,7 +94,7 @@
                 block
                 size="sm" 
                 :color="cadToolMode === 'walls' ? 'primary' : 'gray'" 
-                variant="subtle" 
+                variant="soft" 
                 icon="i-heroicons-pencil" 
                 @click="cadToolMode = 'walls'"
                 class="justify-start font-medium"
