@@ -13,6 +13,9 @@ permissions:
   contents: read
 
 jobs:
+  # ==========================================
+  # JOB 1: Code Verification & Automated Tests
+  # ==========================================
   test:
     name: Run Full-Stack Test Suite
     runs-on: ubuntu-latest
@@ -52,10 +55,10 @@ jobs:
           npm run test
 
   # ==========================================
-  # JOB 2: Dry-Run Container Build Validation
+  # JOB 2: Parallel Backend Container Build Check
   # ==========================================
-  build-check:
-    name: Validate Container Builds (Dry-Run)
+  build-check-backend:
+    name: Validate Backend Container (Dry-Run)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -79,6 +82,24 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # ==========================================
+  # JOB 3: Parallel Frontend Container Build Check
+  # ==========================================
+  build-check-frontend:
+    name: Validate Frontend Container (Dry-Run)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Set up QEMU for multi-architecture emulation
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # Set up Docker Buildx (creates a multi-arch container builder context)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       # Validate Nuxt Frontend container compilation (Dry-run without push)
       - name: Test-Build Frontend Container
