@@ -87,6 +87,24 @@
               <pattern id="dotted-grid" width="40" height="40" patternUnits="userSpaceOnUse">
                 <circle cx="2" cy="2" r="1.5" fill="#475569" opacity="0.4" />
               </pattern>
+
+              <!-- Dynamic Wall Cutout Mask (Creates clean transparent openings for doors/windows) -->
+              <mask id="wall-mask">
+                <!-- White area allows standard walls to paint normally -->
+                <rect width="100%" height="100%" fill="#ffffff" />
+                <!-- Black lines represent door segments, cutting out doorways from the walls -->
+                <line 
+                  v-for="door in activeFloorWalls.filter(w => w.type === 'door' || w.type === 'door-double')" 
+                  :key="'mask_' + door.id"
+                  :x1="door.x1 * 2" 
+                  :y1="door.y1 * 2" 
+                  :x2="door.x2 * 2" 
+                  :y2="door.y2 * 2" 
+                  stroke="#000000" 
+                  :stroke-width="(door.thickness || 10) * 0.4 + 4" 
+                  stroke-linecap="round"
+                />
+              </mask>
             </defs>
             <rect width="100%" height="100%" fill="url(#dotted-grid)" />
 
@@ -96,18 +114,78 @@
             <rect x="54" y="54" width="692" height="392" fill="none" stroke="#1e293b" stroke-width="1" />
 
             <!-- Custom Drawn 2D CAD blueprint walls (Phase 1 DCIM CAD Walls) -->
-            <line 
-              v-for="wall in activeFloorWalls" 
-              :key="wall.id" 
-              :x1="wall.x1 * 2" 
-              :y1="wall.y1 * 2" 
-              :x2="wall.x2 * 2" 
-              :y2="wall.y2 * 2" 
-              stroke="#64748b" 
-              stroke-width="6" 
-              stroke-linecap="round" 
-              class="opacity-90"
-            />
+            <g v-for="wall in activeFloorWalls" :key="wall.id">
+              <!-- Render Door Segment with Swing Arc (Single or Double Door) -->
+              <g v-if="wall.type === 'door' || wall.type === 'door-double'">
+                <!-- If double/split door, render two half-size open door leaves -->
+                <template v-if="wall.type === 'door-double'">
+                  <line 
+                    :x1="getDoorLeafCoords(wall).x1" :y1="getDoorLeafCoords(wall).y1" 
+                    :x2="getDoorLeafCoords(wall).openX1" :y2="getDoorLeafCoords(wall).openY1" 
+                    stroke="#f43f5e" :stroke-width="(wall.thickness || 10) * 0.4" 
+                    stroke-linecap="round"
+                    vector-effect="non-scaling-stroke"
+                  />
+                  <line 
+                    :x1="getDoorLeafCoords(wall).x2" :y1="getDoorLeafCoords(wall).y2" 
+                    :x2="getDoorLeafCoords(wall).openX2" :y2="getDoorLeafCoords(wall).openY2" 
+                    stroke="#f43f5e" :stroke-width="(wall.thickness || 10) * 0.4" 
+                    stroke-linecap="round"
+                    vector-effect="non-scaling-stroke"
+                  />
+                </template>
+                <!-- Standard single open door leaf -->
+                <line 
+                  v-else
+                  :x1="getDoorLeafCoords(wall).x1" :y1="getDoorLeafCoords(wall).y1" 
+                  :x2="getDoorLeafCoords(wall).openX" :y2="getDoorLeafCoords(wall).openY" 
+                  stroke="#f43f5e" :stroke-width="(wall.thickness || 10) * 0.4" 
+                  stroke-linecap="round"
+                  vector-effect="non-scaling-stroke"
+                />
+                
+                <!-- Shared Arc Swing Paths -->
+                <path 
+                  :d="getDoorArcPath(wall)" 
+                  fill="none" 
+                  stroke="#f43f5e" 
+                  stroke-width="1.5" 
+                  stroke-dasharray="3" 
+                  class="opacity-70"
+                />
+              </g>
+
+              <!-- Render Room Enclosure (Rectangular Room) -->
+              <rect 
+                v-else-if="wall.type === 'wall-rect'"
+                :x="Math.min(wall.x1, wall.x2) * 2" 
+                :y="Math.min(wall.y1, wall.y2) * 2" 
+                :width="Math.abs(wall.x2 - wall.x1) * 2" 
+                :height="Math.abs(wall.y2 - wall.y1) * 2" 
+                fill="none"
+                stroke="#64748b" 
+                :stroke-width="(wall.thickness || 20) * 0.4" 
+                stroke-linejoin="round"
+                class="opacity-90"
+                mask="url(#wall-mask)"
+                vector-effect="non-scaling-stroke"
+              />
+
+              <!-- Standard Wall Segment -->
+              <line 
+                v-else
+                :x1="wall.x1 * 2" 
+                :y1="wall.y1 * 2" 
+                :x2="wall.x2 * 2" 
+                :y2="wall.y2 * 2" 
+                stroke="#64748b" 
+                :stroke-width="(wall.thickness || 20) * 0.4" 
+                stroke-linecap="round" 
+                class="opacity-90"
+                mask="url(#wall-mask)"
+                vector-effect="non-scaling-stroke"
+              />
+            </g>
 
             <!-- Secure Entrance Gate (Drafting Lines) -->
             <line x1="380" y1="50" x2="420" y2="50" stroke="#f43f5e" stroke-width="12" />
@@ -393,6 +471,69 @@ const activeFloorWalls = computed(() => {
   const floor = selectedDc.value.floors?.find(f => f.id === selectedFloorId.value)
   return floor?.walls || []
 })
+
+// Calculates the open-state door leaf coordinates (hinge to swung endpoints)
+// Supports single doors, flipped direction, and double/split doors meeting cleanly
+const getDoorLeafCoords = (wall) => {
+  const x1 = wall.x1 * 2
+  const y1 = wall.y1 * 2
+  const x2 = wall.x2 * 2
+  const y2 = wall.y2 * 2
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const sweep = wall.flipped ? -1 : 1
+  
+  if (wall.type === 'door-double' || wall.type === 'door-split') {
+    // Left leaf pivots at x1,y1, open leaf is swung 90 deg (half-size!)
+    const openX1 = x1 + (dy / 2) * sweep
+    const openY1 = y1 - (dx / 2) * sweep
+    
+    // Right leaf pivots at x2,y2, open leaf is swung 90 deg (half-size!)
+    const openX2 = x2 + (dy / 2) * sweep
+    const openY2 = y2 - (dx / 2) * sweep
+    
+    return { x1, y1, openX1, openY1, x2, y2, openX2, openY2 }
+  }
+  
+  // Standard single door leaf pivoted at x1,y1, open leaf is swung 90 deg (full-size!)
+  const openX = x1 + dy * sweep
+  const openY = y1 - dx * sweep
+  return { x1, y1, openX, openY, x2, y2 }
+}
+
+// Calculates a high-precision quadrant door arc swing pivoting around hinge (x1, y1)
+// Supports single doors, flipped direction, and double/split doors swinging concurrently
+const getDoorArcPath = (wall) => {
+  const x1 = wall.x1 * 2
+  const y1 = wall.y1 * 2
+  const x2 = wall.x2 * 2
+  const y2 = wall.y2 * 2
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const r = Math.sqrt(dx*dx + dy*dy)
+  const sweep = wall.flipped ? 0 : 1
+  
+  if (wall.type === 'door-double' || wall.type === 'door-split') {
+    const halfR = r / 2
+    const midX = (x1 + x2) / 2
+    const midY = (y1 + y2) / 2
+    
+    const openX1 = x1 + (dy / 2) * (wall.flipped ? -1 : 1)
+    const openY1 = y1 - (dx / 2) * (wall.flipped ? -1 : 1)
+    const openX2 = x2 + (dy / 2) * (wall.flipped ? -1 : 1)
+    const openY2 = y2 - (dx / 2) * (wall.flipped ? -1 : 1)
+    
+    // Sweeps elegantly from the open door end-points into the closed middle meeting point
+    const arc1 = `M ${openX1} ${openY1} A ${halfR} ${halfR} 0 0 ${sweep} ${midX} ${midY}`
+    const arc2 = `M ${openX2} ${openY2} A ${halfR} ${halfR} 0 0 ${1 - sweep} ${midX} ${midY}`
+    return `${arc1} ${arc2}`
+  }
+  
+  const openX = x1 + dy * (wall.flipped ? -1 : 1)
+  const openY = y1 - dx * (wall.flipped ? -1 : 1)
+  // Sweeps from open door leaf endpoint back to standard wall line endpoint (x2, y2)
+  return `M ${openX} ${openY} A ${r} ${r} 0 0 ${sweep} ${x2} ${y2}`
+}
 
 const dcOptions = computed(() => {
   if (!datacenters.value) return []
