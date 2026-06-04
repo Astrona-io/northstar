@@ -62,12 +62,6 @@ The next generation of Northstar enhancements will target visual taxonomy linkag
   - **OTel Go SDK Integration:** Set up TracerProviders and MeterProviders establishing outbound OTLP exporters over HTTP/JSON or gRPC.
   - **Full DB & HTTP Instrumentation:** Instrument the Echo router and GORM callbacks to trace SQLite transaction runtimes and webhook event deliveries as spans.
 
-### Phase 10: Diátaxis-Compliant MkDocs Architecture & Developer Documentation (Branding Docs L3)
-* **Goal:** Bootstrap a high-fidelity, Diátaxis-conforming **MkDocs** project providing comprehensive architecture diagrams and reference guidelines styled beautifully to align with the core **Astrona/Northstar corporate design guidelines**.
-* **Details:**
-  - **Material Theme customization:** Deploy MkDocs Material theme styled with sharp dark/light layouts, custom font typographies, and sleek deep-slate corporate brand aesthetics.
-  - **Diátaxis Hierarchy:** Structure documentation across the four standard quadrants: *Tutorials*, *How-To Guides*, *Reference*, and *Explanation / Architecture*.
-
 ### Phase 12: Declarative API Sandbox and Mock-free Live API Docs (API DX)
 * **Goal:** Streamline developer integrations by serving a live interactive API playground directly from the admin dashboard.
 * **Details:**
@@ -89,4 +83,4 @@ The Northstar platform has been successfully developed, refactored, and verified
 3. **Advanced UX/UI & Nuxt 4 Architecture:** Migrated the frontend to a decoupled Nuxt 4 structure (`app/`). Engineered an elegant GitLab-style "Site Admin" utility hub, horizontal datacenter location filters, multi-stage 4-column creation wizards, and interactive on-screen onboarding guides.
 4. **Visual CAD Blueprinting & 3D Cabinet DCIM Canvas:** Designed interactive vertical 42U physical server cabinets featuring mounting rails and blinking status LEDs. Programmed SVG CAD floor plans with multi-floor selectors, precision 2D wall segment drawing tools, cross-cabinet copper/fiber patch ledgers, and automated Switch SFP+ port capacity heatmaps.
 5. **Advanced RBAC, Dynamic Custom Fields & SecOps Auditing:** Secured write/delete APIs with JWT authentication. Designed dynamic category attributes and tabs, CSV bulk inventory and cabling patch importers with inline regex pre-checks, active background TCP subnet scanners, asynchronous thread-safe webhook publishers (Slack/Jira), and AWS security compliance group visualizers.
-6. **Multi-Layer Verification & Real-Data E2E Test Suite:** Fully verified the codebase utilizing Go handler integration tests, Vitest component units, and a robust Playwright E2E browser test suite running against a dedicated E2E test database (`cmdb_e2e.db`) with an automated setup/teardown engine.
+6. **Multi-Layer Verification, Real-Data E2E Test Suite & Diátaxis Developer Documentation:** Fully verified the codebase utilizing Go handler integration tests, Vitest component units, and a robust Playwright E2E browser test suite running against a dedicated E2E test database (`cmdb_e2e.db`). Bootstrapped a high-fidelity, Diátaxis-conforming MkDocs Material developer documentation portal (Phase 10) providing comprehensive tutorials, goal-oriented how-to recipes, REST API specifications, and Mermaid.js system architecture flowcharts fully aligned with Astrona corporate branding guidelines.
