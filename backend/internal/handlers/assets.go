@@ -24,6 +24,8 @@ type AssetCreateReq struct {
 	HostAssetID          *string        `json:"host_asset_id"`
 	ContainerImage       string         `json:"container_image"`
 	ContainerPortMapping string         `json:"container_port_mapping"`
+	DeviceModelID        *string        `json:"device_model_id"`
+	DeviceModelRevision  *int           `json:"device_model_revision"`
 }
 
 // CreateAsset handles POST /api/assets/
@@ -82,9 +84,25 @@ func CreateAsset(c echo.Context) error {
 		ContainerPortMapping: req.ContainerPortMapping,
 	}
 
+	if req.DeviceModelID != nil && *req.DeviceModelID != "" {
+		var dm models.DeviceModel
+		if err := database.DB.First(&dm, "id = ?", *req.DeviceModelID).Error; err != nil {
+			return c.JSON(http.StatusBadRequest, echo.Map{"error": "Referenced Device Model not found"})
+		}
+		asset.DeviceModelID = req.DeviceModelID
+		if req.DeviceModelRevision != nil {
+			asset.DeviceModelRevision = req.DeviceModelRevision
+		} else {
+			rev := dm.Revision
+			asset.DeviceModelRevision = &rev
+		}
+	}
+
 	if err := database.DB.Create(&asset).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create asset: " + err.Error()})
 	}
+
+	populateSingleAssetRevisionDetails(&asset)
 
 	RecordAuditLog(asset.ID, "create", "Asset created with type: "+asset.Type)
 
@@ -119,7 +137,7 @@ func ReadAssets(c echo.Context) error {
 		}
 	}
 
-	query := database.DB.Model(&models.Asset{}).Preload("MaintenanceWindows").Preload("Rack.Datacenter")
+	query := database.DB.Model(&models.Asset{}).Preload("MaintenanceWindows").Preload("Rack.Datacenter").Preload("DeviceModel.Manufacturer")
 
 	if search != "" {
 		searchTerm := "%" + search + "%"
@@ -154,6 +172,8 @@ func ReadAssets(c echo.Context) error {
 		assets[i].MaintenanceStatus = assets[i].ComputeMaintenanceStatus()
 	}
 
+	populateDeviceModelRevisionDetails(assets)
+
 	return c.JSON(http.StatusOK, assets)
 }
 
@@ -165,13 +185,35 @@ func ReadAsset(c echo.Context) error {
 	}
 
 	var asset models.Asset
-	err := database.DB.Preload("MaintenanceWindows").First(&asset, "id = ?", id).Error
+	err := database.DB.Preload("MaintenanceWindows").Preload("DeviceModel.Manufacturer").First(&asset, "id = ?", id).Error
 	if err != nil {
 		return c.JSON(http.StatusNotFound, echo.Map{"error": "Asset not found"})
 	}
 
 	asset.MaintenanceStatus = asset.ComputeMaintenanceStatus()
+	populateSingleAssetRevisionDetails(&asset)
+
 	return c.JSON(http.StatusOK, asset)
+}
+
+func populateDeviceModelRevisionDetails(assets []models.Asset) {
+	for i := range assets {
+		if assets[i].DeviceModelID != nil && assets[i].DeviceModelRevision != nil {
+			var rev models.DeviceModelRevision
+			if err := database.DB.First(&rev, "device_model_id = ? AND revision = ?", *assets[i].DeviceModelID, *assets[i].DeviceModelRevision).Error; err == nil {
+				assets[i].DeviceModelRevisionDetails = &rev
+			}
+		}
+	}
+}
+
+func populateSingleAssetRevisionDetails(asset *models.Asset) {
+	if asset.DeviceModelID != nil && asset.DeviceModelRevision != nil {
+		var rev models.DeviceModelRevision
+		if err := database.DB.First(&rev, "device_model_id = ? AND revision = ?", *asset.DeviceModelID, *asset.DeviceModelRevision).Error; err == nil {
+			asset.DeviceModelRevisionDetails = &rev
+		}
+	}
 }
 
 // UpdateAsset handles PUT /api/assets/{asset_id}
@@ -261,6 +303,33 @@ func UpdateAsset(c echo.Context) error {
 			updates["container_port_mapping"] = s
 		}
 	}
+	if val, exists := body["device_model_id"]; exists {
+		if val == nil {
+			updates["device_model_id"] = nil
+			updates["device_model_revision"] = nil
+		} else if s, ok := val.(string); ok {
+			updates["device_model_id"] = s
+			if _, revExists := body["device_model_revision"]; !revExists {
+				var dm models.DeviceModel
+				if err := database.DB.First(&dm, "id = ?", s).Error; err == nil {
+					updates["device_model_revision"] = dm.Revision
+				}
+			}
+		}
+	}
+	if val, exists := body["device_model_revision"]; exists {
+		if val == nil {
+			updates["device_model_revision"] = nil
+		} else {
+			switch v := val.(type) {
+			case float64:
+				ival := int(v)
+				updates["device_model_revision"] = ival
+			case int:
+				updates["device_model_revision"] = v
+			}
+		}
+	}
 	if val, exists := body["properties"]; exists {
 		if val == nil {
 			updates["properties"] = models.JSONMap{}
@@ -322,10 +391,11 @@ func UpdateAsset(c echo.Context) error {
 	}
 
 	// Reload to get fully updated fields + preload windows for status recalculation
-	if err := database.DB.Preload("MaintenanceWindows").First(&asset, "id = ?", id).Error; err != nil {
+	if err := database.DB.Preload("MaintenanceWindows").Preload("DeviceModel.Manufacturer").First(&asset, "id = ?", id).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to reload updated asset"})
 	}
 	asset.MaintenanceStatus = asset.ComputeMaintenanceStatus()
+	populateSingleAssetRevisionDetails(&asset)
 
 	// Trigger Outbound Webhooks (Phase 3 Webhooks)
 	DispatchWebhookEvent("asset:update", asset)

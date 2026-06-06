@@ -46,4 +46,46 @@ describe('AssetFormModal', () => {
     expect(document.body.innerHTML).toContain('Engine')
     expect(document.body.innerHTML).not.toContain('Server Properties')
   })
+
+  it('autofills specifications when a device model is selected', async () => {
+    const wrapper = await mountSuspended(AssetFormModal, {
+      props: {
+        modelValue: true,
+        asset: {
+          name: 'Core-Switch',
+          type: 'Network',
+          status: 'active',
+          properties: {
+            network_subtype: 'Switch (L3)'
+          }
+        }
+      }
+    })
+
+    const mockDeviceModel = {
+      id: 'dm-99',
+      model_name: 'Catalyst 9300',
+      manufacturer: { name: 'Cisco' },
+      revision: 2,
+      ports: { RJ45: 24, 'SFP+': 4 }
+    }
+
+    wrapper.vm.devices = [
+      {
+        ...mockDeviceModel,
+        displayName: 'Cisco - Catalyst 9300 (v2)'
+      }
+    ]
+    await nextTick()
+
+    // Simulate selection
+    wrapper.vm.selectedDeviceModel = wrapper.vm.devices[0]
+    await nextTick()
+
+    expect(wrapper.vm.form.device_model_id).toBe('dm-99')
+    expect(wrapper.vm.form.device_model_revision).toBe(2)
+    expect(wrapper.vm.form.properties.manufacturer).toBe('Cisco')
+    expect(wrapper.vm.form.properties.model).toBe('Catalyst 9300')
+    expect(wrapper.vm.form.properties.port_config).toBe('24x RJ45 + 4x SFP+')
+  })
 })

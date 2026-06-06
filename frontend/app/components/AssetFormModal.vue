@@ -189,6 +189,38 @@
         <div v-else-if="form.type === 'Network'" class="space-y-4 pt-2">
           <UDivider label="Network Device Specifications" />
           <div class="grid grid-cols-2 gap-4">
+            <UFormGroup label="Standard Catalog Device Model" class="col-span-2">
+              <USelectMenu 
+                v-model="selectedDeviceModel" 
+                :options="devices" 
+                option-attribute="displayName" 
+                placeholder="Select standardized hardware catalog model spec (autofills below)..." 
+                searchable
+                class="w-full"
+              />
+            </UFormGroup>
+
+            <!-- Catalog revision details and manual upgrade -->
+            <div v-if="selectedDeviceModel" class="col-span-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded border border-slate-150 dark:border-slate-800 flex justify-between items-center text-xs">
+              <div>
+                <span class="font-bold text-slate-800 dark:text-white block font-mono">Catalog Revision Locking</span>
+                <span class="text-slate-500 mt-0.5 block font-mono">
+                  Asset Pinned Revision: <strong>v{{ form.device_model_revision || 1 }}</strong> 
+                  | Catalog Current Revision: <strong>v{{ selectedDeviceModel.revision || 1 }}</strong>
+                </span>
+              </div>
+              <UButton 
+                v-if="selectedDeviceModel.revision > (form.device_model_revision || 1)" 
+                size="xs" 
+                color="blue" 
+                icon="i-heroicons-arrow-up-circle"
+                @click="upgradeDeviceModelRevision"
+              >
+                Upgrade to v{{ selectedDeviceModel.revision }}
+              </UButton>
+              <span v-else class="text-[10px] text-green-600 dark:text-green-400 font-bold font-mono uppercase tracking-wider bg-green-50 dark:bg-green-950/30 px-2 py-0.5 rounded border border-green-200 dark:border-green-900/40">Latest Revision Pinned</span>
+            </div>
+
             <UFormGroup label="Network Device Subtype">
               <USelect v-model="form.properties.network_subtype" :options="['Router', 'Switch (L2)', 'Switch (L3)', 'Access Point (AP)', 'Firewall', 'Load Balancer']" placeholder="Select subtype..." required />
             </UFormGroup>
@@ -585,6 +617,63 @@ watch(customFieldTabGroups, (newGroups) => {
   }
 }, { immediate: true })
 const deviceCatalogEmpty = ref(false)
+const devices = ref([])
+const selectedDeviceModelId = ref(null)
+
+const loadDevicesCatalog = async () => {
+  try {
+    const { data } = await fetchDevices()
+    devices.value = (data.value || []).map(d => ({
+      ...d,
+      displayName: `${d.manufacturer?.name || 'Generic'} - ${d.model_name} (v${d.revision || 1})`
+    }))
+  } catch (error) {
+    console.error('Failed to load device catalog:', error)
+  }
+}
+
+const selectedDeviceModel = computed({
+  get: () => {
+    if (!selectedDeviceModelId.value || devices.value.length === 0) return null
+    return devices.value.find(d => d.id === selectedDeviceModelId.value) || null
+  },
+  set: (val) => {
+    if (val) {
+      selectedDeviceModelId.value = val.id
+      form.value.device_model_id = val.id
+      form.value.properties.manufacturer = val.manufacturer?.name || ''
+      form.value.properties.model = val.model_name
+      if (val.ports && Object.keys(val.ports).length > 0) {
+        form.value.properties.port_config = Object.entries(val.ports)
+          .map(([type, count]) => `${count}x ${type}`)
+          .join(' + ')
+      } else {
+        form.value.properties.port_config = ''
+      }
+      if (!isEditing.value || !form.value.device_model_revision) {
+        form.value.device_model_revision = val.revision || 1
+      }
+    } else {
+      selectedDeviceModelId.value = null
+      form.value.device_model_id = null
+      form.value.device_model_revision = null
+    }
+  }
+})
+
+const upgradeDeviceModelRevision = () => {
+  if (selectedDeviceModel.value) {
+    form.value.device_model_revision = selectedDeviceModel.value.revision
+    if (selectedDeviceModel.value.ports && Object.keys(selectedDeviceModel.value.ports).length > 0) {
+      form.value.properties.port_config = Object.entries(selectedDeviceModel.value.ports)
+        .map(([type, count]) => `${count}x ${type}`)
+        .join(' + ')
+    } else {
+      form.value.properties.port_config = ''
+    }
+    alert(`Successfully bumped asset to catalog revision v${selectedDeviceModel.value.revision}`)
+  }
+}
 
 const selectedUplinks = ref([])
 const selectedDownlinks = ref([])
@@ -600,7 +689,9 @@ const form = ref({
   rack_position_u: null,
   host_asset_id: null,
   container_image: '',
-  container_port_mapping: ''
+  container_port_mapping: '',
+  device_model_id: null,
+  device_model_revision: null
 })
 
 const auditDeviceCatalog = async () => {
@@ -675,6 +766,7 @@ watch(() => props.modelValue, (isOpenVal) => {
     loadNetworkAssets()
     loadCurrentRelationships()
     loadCategoryCustomFields()
+    loadDevicesCatalog()
   }
 })
 
@@ -695,11 +787,14 @@ watch(() => props.asset, (newAsset) => {
       host_asset_id: newAsset.host_asset_id || null,
       container_image: newAsset.container_image || '',
       container_port_mapping: newAsset.container_port_mapping || '',
+      device_model_id: newAsset.device_model_id || null,
+      device_model_revision: newAsset.device_model_revision || null,
       properties: {
         ...newAsset.properties,
         network_subtype: fixedSubtype
       }
     }
+    selectedDeviceModelId.value = newAsset.device_model_id || null
     step.value = 2
   } else {
     form.value = { 
@@ -713,8 +808,11 @@ watch(() => props.asset, (newAsset) => {
       rack_position_u: null,
       host_asset_id: null,
       container_image: '',
-      container_port_mapping: ''
+      container_port_mapping: '',
+      device_model_id: null,
+      device_model_revision: null
     }
+    selectedDeviceModelId.value = null
     step.value = 1
   }
 }, { immediate: true })

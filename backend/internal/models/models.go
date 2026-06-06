@@ -171,6 +171,12 @@ type Asset struct {
 	Rack          *Rack   `gorm:"foreignKey:RackID" json:"rack,omitempty"`
 	RackPositionU *int    `json:"rack_position_u"` // e.g. U12 starting position height inside cabinet
 
+	// Device Model Catalog Reference (Standard equipment ports mapping)
+	DeviceModelID       *string              `gorm:"index" json:"device_model_id"`
+	DeviceModel         *DeviceModel         `gorm:"foreignKey:DeviceModelID" json:"device_model,omitempty"`
+	DeviceModelRevision *int                 `json:"device_model_revision"`
+	DeviceModelRevisionDetails *DeviceModelRevision `gorm:"-" json:"device_model_revision_details,omitempty"`
+
 	// Host-Guest Dependency Mapping / Containerization Fields (Phase 2)
 	HostAssetID          *string `gorm:"index" json:"host_asset_id"` // Node/Server hosting this VM/Container
 	HostAsset            *Asset  `gorm:"foreignKey:HostAssetID" json:"host_asset,omitempty"`
@@ -312,10 +318,33 @@ type DeviceModel struct {
 	ModelName      string       `gorm:"index" json:"model_name"`
 	Categories     []Category   `gorm:"many2many:device_model_categories;" json:"categories"`
 	GeneralInfo    string       `json:"general_info"`
+	Revision       int          `gorm:"default:1" json:"revision"`
+	Ports          JSONMap      `gorm:"type:text" json:"ports"`
 	CreatedAt      time.Time    `gorm:"autoCreateTime" json:"created_at"`
 }
 
 func (m *DeviceModel) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
+	}
+	if m.Revision == 0 {
+		m.Revision = 1
+	}
+	return
+}
+
+// DeviceModelRevision represents a historical version of a DeviceModel.
+type DeviceModelRevision struct {
+	ID            string    `gorm:"primaryKey;type:varchar(36)" json:"id"`
+	DeviceModelID string    `gorm:"index" json:"device_model_id"`
+	Revision      int       `json:"revision"`
+	ModelName     string    `json:"model_name"`
+	GeneralInfo   string    `json:"general_info"`
+	Ports         JSONMap   `gorm:"type:text" json:"ports"`
+	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+func (m *DeviceModelRevision) BeforeCreate(tx *gorm.DB) (err error) {
 	if m.ID == "" {
 		m.ID = uuid.New().String()
 	}
