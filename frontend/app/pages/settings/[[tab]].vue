@@ -445,7 +445,10 @@
                         </span>
                       </div>
                     </div>
-                    <UButton v-if="canDelete" size="xs" color="red" variant="ghost" icon="i-heroicons-trash" @click="removeDatacenter(dc.id)" />
+                    <div class="flex items-center gap-1">
+                      <UButton v-if="canMutate" size="xs" color="gray" variant="ghost" icon="i-heroicons-pencil-square" @click.stop="openEditDcModal(dc)" />
+                      <UButton v-if="canDelete" size="xs" color="red" variant="ghost" icon="i-heroicons-trash" @click.stop="removeDatacenter(dc.id)" />
+                    </div>
                   </div>
 
                   <!-- Nested Racks list inside DC -->
@@ -1105,6 +1108,50 @@
       </UCard>
     </UModal>
 
+    <!-- Edit Location Profile Modal -->
+    <UModal v-model="isEditDcModalOpen">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-globe-alt" class="h-5 w-5 text-primary-500" />
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">Edit Location Settings</h4>
+            </div>
+            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" class="-my-1" @click="isEditDcModalOpen = false" />
+          </div>
+        </template>
+        <form @submit.prevent="updateDatacenterSettings" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <UFormGroup label="Location Name" class="text-xs font-semibold">
+              <UInput v-model="editDcForm.name" placeholder="e.g. Dublin-HQ" required />
+            </UFormGroup>
+            <UFormGroup label="Datacenter Type" class="text-xs font-semibold">
+              <USelect v-model="editDcForm.type" :options="['on-prem', 'homelab', 'air-gap', 'cloud:aws', 'cloud:gcp', 'cloud:azure']" required />
+            </UFormGroup>
+            <UFormGroup label="Country Location" class="text-xs font-semibold">
+              <UInput v-model="editDcForm.country" placeholder="e.g. Ireland" />
+            </UFormGroup>
+            <UFormGroup label="City Location" class="text-xs font-semibold">
+              <UInput v-model="editDcForm.city" placeholder="e.g. Dublin" />
+            </UFormGroup>
+            <!-- Connection Speeds parameters -->
+            <UFormGroup label="Uplink Connection Speed" class="text-xs font-semibold">
+              <UInput v-model="editDcForm.uplink_speed" placeholder="e.g. 2.5 Gbps Fiber, AWS Elastic" />
+            </UFormGroup>
+            <UFormGroup label="Location Public IP Gate" class="text-xs font-semibold">
+              <UInput v-model="editDcForm.public_ip" placeholder="e.g. 85.12.85.112" />
+            </UFormGroup>
+          </div>
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <UButton color="gray" variant="ghost" @click="isEditDcModalOpen = false">Cancel</UButton>
+            <UButton type="submit" :loading="isUpdatingDc" icon="i-heroicons-pencil-square" color="primary">
+              Update Datacenter Settings
+            </UButton>
+          </div>
+        </form>
+      </UCard>
+    </UModal>
+
     <!-- Policy Management Modal -->
     <UModal v-model="isModalOpen" v-if="selectedUser">
       <UCard>
@@ -1239,7 +1286,7 @@ const { fetchUsers, fetchGroups, fetchPermissions, updateUserOverrides } = useUs
 const { fetchCustomFields, createCustomField, deleteCustomField } = useCustomFields()
 const { fetchWebhooks, createWebhook, deleteWebhook } = useWebhooks()
 const { fetchDiscoveryResults, triggerDiscoveryScan, importDiscoveredDevice } = useDiscovery()
-const { fetchDatacenters, fetchRacks } = useDCIM()
+const { fetchDatacenters, fetchRacks, updateDatacenter } = useDCIM()
 const { isAdmin, canMutate, canDelete, getAuthHeader } = useAuth()
 
 const runtimeConfig = useRuntimeConfig()
@@ -1320,6 +1367,8 @@ const isSavingHook = ref(false)
 
 const isCreateDcModalOpen = ref(false)
 const isSavingDc = ref(false)
+const isEditDcModalOpen = ref(false)
+const isUpdatingDc = ref(false)
 
 const isSavingCat = ref(false)
 const isSavingSub = ref(false)
@@ -1464,6 +1513,54 @@ const newDcForm = ref({
   uplink_speed: '',
   public_ip: ''
 })
+
+const editDcForm = ref({
+  id: '',
+  name: '',
+  type: 'homelab',
+  country: '',
+  city: '',
+  uplink_speed: '',
+  public_ip: ''
+})
+
+const openEditDcModal = (dc) => {
+  editDcForm.value = {
+    id: dc.id,
+    name: dc.name,
+    type: dc.type,
+    country: dc.country || '',
+    city: dc.city || '',
+    uplink_speed: dc.properties?.uplink_speed || '',
+    public_ip: dc.properties?.public_ip || ''
+  }
+  isEditDcModalOpen.value = true
+}
+
+const updateDatacenterSettings = async () => {
+  isUpdatingDc.value = true
+  try {
+    const payload = {
+      name: editDcForm.value.name,
+      type: editDcForm.value.type,
+      country: editDcForm.value.country,
+      city: editDcForm.value.city,
+      properties: {
+        uplink_speed: editDcForm.value.uplink_speed || '',
+        public_ip: editDcForm.value.public_ip || ''
+      }
+    }
+    await updateDatacenter(editDcForm.value.id, payload)
+    await refreshDatacenters()
+    alert('Datacenter settings updated successfully.')
+    isEditDcModalOpen.value = false
+  } catch (err) {
+    console.error('Failed to update datacenter settings:', err)
+    alert('Update failed: Check authorization scopes or duplicate name constraints.')
+  } finally {
+    isUpdatingDc.value = false
+  }
+}
 
 // Room Layout Designer State Variables (Phase 1 CAD DCIM & Wall Drawing)
 const selectedDcIdForDesigner = ref(null)

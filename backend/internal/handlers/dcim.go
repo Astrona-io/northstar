@@ -157,6 +157,52 @@ func DeleteDatacenter(c echo.Context) error {
 	return c.JSON(http.StatusOK, echo.Map{"message": "Datacenter deleted successfully"})
 }
 
+// UpdateDatacenter handles PUT /api/datacenters/:id (Admin Only)
+func UpdateDatacenter(c echo.Context) error {
+	id := c.Param("id")
+	if id == "" {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid datacenter ID"})
+	}
+
+	var existing models.Datacenter
+	if err := database.DB.First(&existing, "id = ?", id).Error; err != nil {
+		return c.JSON(http.StatusNotFound, echo.Map{"error": "Datacenter not found"})
+	}
+
+	var update struct {
+		Name       *string         `json:"name"`
+		Type       *string         `json:"type"`
+		Country    *string         `json:"country"`
+		City       *string         `json:"city"`
+		Properties *models.JSONMap `json:"properties"`
+	}
+	if err := c.Bind(&update); err != nil {
+		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid request body"})
+	}
+
+	if update.Name != nil {
+		existing.Name = *update.Name
+	}
+	if update.Type != nil {
+		existing.Type = *update.Type
+	}
+	if update.Country != nil {
+		existing.Country = *update.Country
+	}
+	if update.City != nil {
+		existing.City = *update.City
+	}
+	if update.Properties != nil {
+		existing.Properties = *update.Properties
+	}
+
+	if err := database.DB.Save(&existing).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update datacenter: " + err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, existing)
+}
+
 // ReadRacks handles GET /api/racks
 func ReadRacks(c echo.Context) error {
 	var racks []models.Rack

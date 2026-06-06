@@ -18,10 +18,39 @@ export const useDCIM = () => {
     return useFetch(`${apiBase}/racks/${rackId}`)
   }
 
+  const createDatacenter = async (payload) => {
+    const { getAuthHeader } = useAuth()
+    return await $fetch(`${apiBase}/datacenters/`, {
+      method: 'POST',
+      body: payload,
+      headers: getAuthHeader()
+    })
+  }
+
+  const updateDatacenter = async (id, payload) => {
+    const { getAuthHeader } = useAuth()
+    return await $fetch(`${apiBase}/datacenters/${id}/`, {
+      method: 'PUT',
+      body: payload,
+      headers: getAuthHeader()
+    })
+  }
+
+  const deleteDatacenter = async (id) => {
+    const { getAuthHeader } = useAuth()
+    return await $fetch(`${apiBase}/datacenters/${id}/`, {
+      method: 'DELETE',
+      headers: getAuthHeader()
+    })
+  }
+
   return {
     fetchDatacenters,
     fetchDatacenterTypes,
     fetchRacks,
-    fetchRackDetails
+    fetchRackDetails,
+    createDatacenter,
+    updateDatacenter,
+    deleteDatacenter
   }
 }

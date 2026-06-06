@@ -152,6 +152,8 @@ func RegisterRoutes(e *echo.Echo) {
 	e.GET("/api/datacenters/", handlers.ReadDatacenters)
 	e.POST("/api/datacenters", handlers.CreateDatacenter, pAssetWrite)
 	e.POST("/api/datacenters/", handlers.CreateDatacenter, pAssetWrite)
+	e.PUT("/api/datacenters/:id", handlers.UpdateDatacenter, pAssetWrite)
+	e.PUT("/api/datacenters/:id/", handlers.UpdateDatacenter, pAssetWrite)
 	e.DELETE("/api/datacenters/:id", handlers.DeleteDatacenter, pAssetDelete)
 	e.DELETE("/api/datacenters/:id/", handlers.DeleteDatacenter, pAssetDelete)
 
