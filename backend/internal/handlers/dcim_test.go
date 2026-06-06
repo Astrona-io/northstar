@@ -146,4 +146,35 @@ func TestDCIMEndpoints(t *testing.T) {
 			t.Errorf("Expected updated floor level 1, got %d", updated.Level)
 		}
 	})
+
+	t.Run("Update Datacenter", func(t *testing.T) {
+		bodyBytes := []byte(`{"name":"Copenhagen-Updated","type":"homelab","country":"Denmark","city":"Copenhagen-West","properties":{"uplink_speed":"10 Gbps","public_ip":"192.168.1.1"}}`)
+		req := httptest.NewRequest(http.MethodPut, "/api/datacenters/"+dc.ID, bytes.NewReader(bodyBytes))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		c := e.NewContext(req, rec)
+		c.SetPath("/api/datacenters/:id")
+		c.SetParamNames("id")
+		c.SetParamValues(dc.ID)
+
+		err := handlers.UpdateDatacenter(c)
+		if err != nil {
+			t.Fatalf("Expected no error, got %v", err)
+		}
+		if rec.Code != http.StatusOK {
+			t.Errorf("Expected status OK, got %d, body: %s", rec.Code, rec.Body.String())
+		}
+
+		var updated models.Datacenter
+		json.Unmarshal(rec.Body.Bytes(), &updated)
+		if updated.Name != "Copenhagen-Updated" {
+			t.Errorf("Expected name 'Copenhagen-Updated', got '%s'", updated.Name)
+		}
+		if updated.City != "Copenhagen-West" {
+			t.Errorf("Expected city 'Copenhagen-West', got '%s'", updated.City)
+		}
+		if speed, ok := updated.Properties["uplink_speed"].(string); !ok || speed != "10 Gbps" {
+			t.Errorf("Expected uplink_speed '10 Gbps', got '%v'", updated.Properties["uplink_speed"])
+		}
+	})
 }

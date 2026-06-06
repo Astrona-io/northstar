@@ -48,4 +48,31 @@ describe('Settings Tab Page - Floor Management UI', () => {
     expect(html).toContain('Rename (Alias)')
     expect(html).toContain('Add Floor')
   })
+
+  it('opens edit modal with datacenter details when edit button is clicked', async () => {
+    const wrapper = await mountSuspended(TabPage)
+
+    wrapper.vm.activeTab = 'dcim'
+    const dcObj = {
+      id: 'dc-1',
+      name: 'Northstar Dublin HQ',
+      type: 'on-prem',
+      city: 'Dublin',
+      country: 'Ireland',
+      properties: {
+        uplink_speed: '10 Gbps',
+        public_ip: '1.2.3.4'
+      },
+      floors: []
+    }
+    wrapper.vm.datacenters = [dcObj]
+    await wrapper.vm.$nextTick()
+
+    wrapper.vm.openEditDcModal(dcObj)
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.vm.isEditDcModalOpen).toBe(true)
+    expect(wrapper.vm.editDcForm.name).toBe('Northstar Dublin HQ')
+    expect(wrapper.vm.editDcForm.uplink_speed).toBe('10 Gbps')
+  })
 })
