@@ -33,6 +33,17 @@
             </UBadge>
           </div>
         </template>
+        <template #revision-data="{ row }">
+          <UBadge color="blue" variant="subtle" class="font-mono text-xs">v{{ row.revision || 1 }}</UBadge>
+        </template>
+        <template #ports-data="{ row }">
+          <div class="text-xs font-mono max-w-xs truncate">
+            <span v-if="row.ports && Object.keys(row.ports).length > 0">
+              {{ Object.entries(row.ports).map(([type, count]) => `${count}x ${type}`).join(', ') }}
+            </span>
+            <span v-else class="text-gray-400 italic">No ports</span>
+          </div>
+        </template>
         <template #general_info-data="{ row }">
           <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs block">
             {{ row.general_info || 'No description provided.' }}
@@ -98,6 +109,8 @@ const columns = [
   { key: 'manufacturer', label: 'Manufacturer' },
   { key: 'model_name', label: 'Model' },
   { key: 'categories', label: 'Categories' },
+  { key: 'revision', label: 'Revision' },
+  { key: 'ports', label: 'Ports' },
   { key: 'general_info', label: 'General Specifications' },
   { key: 'actions', label: 'Actions' }
 ]

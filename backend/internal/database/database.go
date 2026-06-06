@@ -68,6 +68,7 @@ func InitDB() (*gorm.DB, error) {
 		&models.Category{},
 		&models.SubGroup{},
 		&models.DeviceModel{},
+		&models.DeviceModelRevision{},
 		&models.Permission{},
 		&models.Group{},
 		&models.User{},

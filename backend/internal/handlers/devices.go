@@ -8,6 +8,7 @@ import (
 	"cmdb-backend/internal/models"
 
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type ManufacturerCreateReq struct {
@@ -40,10 +41,11 @@ func ReadManufacturers(c echo.Context) error {
 }
 
 type DeviceModelCreateReq struct {
-	ManufacturerID string   `json:"manufacturer_id"`
-	ModelName      string   `json:"model_name"`
-	CategoryIDs    []string `json:"category_ids"`
-	GeneralInfo    string   `json:"general_info"`
+	ManufacturerID string         `json:"manufacturer_id"`
+	ModelName      string         `json:"model_name"`
+	CategoryIDs    []string       `json:"category_ids"`
+	GeneralInfo    string         `json:"general_info"`
+	Ports          models.JSONMap `json:"ports"`
 }
 
 // CreateDeviceModel handles POST /api/devices/
@@ -82,16 +84,42 @@ func CreateDeviceModel(c echo.Context) error {
 		ModelName:      req.ModelName,
 		Categories:     cats,
 		GeneralInfo:    req.GeneralInfo,
+		Revision:       1,
+		Ports:          req.Ports,
 	}
 
 	if err := database.DB.Create(&device).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create device spec: " + err.Error()})
 	}
 
+	// Create first revision record
+	if err := saveOrUpdateRevisionRecord(database.DB, &device); err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create first device revision: " + err.Error()})
+	}
+
 	// Reload to fetch Preloaded associations
 	database.DB.Preload("Manufacturer").Preload("Categories").First(&device, "id = ?", device.ID)
 
 	return c.JSON(http.StatusOK, device)
+}
+
+func saveOrUpdateRevisionRecord(db *gorm.DB, dm *models.DeviceModel) error {
+	var rev models.DeviceModelRevision
+	err := db.First(&rev, "device_model_id = ? AND revision = ?", dm.ID, dm.Revision).Error
+	if err == nil {
+		rev.ModelName = dm.ModelName
+		rev.GeneralInfo = dm.GeneralInfo
+		rev.Ports = dm.Ports
+		return db.Save(&rev).Error
+	}
+	rev = models.DeviceModelRevision{
+		DeviceModelID: dm.ID,
+		Revision:      dm.Revision,
+		ModelName:     dm.ModelName,
+		GeneralInfo:   dm.GeneralInfo,
+		Ports:         dm.Ports,
+	}
+	return db.Create(&rev).Error
 }
 
 // ReadDeviceModels handles GET /api/devices/
@@ -136,26 +164,68 @@ func UpdateDeviceModel(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, echo.Map{"error": "Invalid JSON: " + err.Error()})
 	}
 
-	updates := make(map[string]any)
+	hasChanges := false
+
+	newManufacturerID := device.ManufacturerID
 	if val, exists := body["manufacturer_id"]; exists {
-		if s, ok := val.(string); ok {
-			updates["manufacturer_id"] = s
-		}
-	}
-	if val, exists := body["model_name"]; exists {
-		if s, ok := val.(string); ok {
-			updates["model_name"] = s
-		}
-	}
-	if val, exists := body["general_info"]; exists {
-		if s, ok := val.(string); ok {
-			updates["general_info"] = s
+		if s, ok := val.(string); ok && s != device.ManufacturerID {
+			newManufacturerID = s
+			hasChanges = true
 		}
 	}
 
-	if len(updates) > 0 {
-		if err := database.DB.Model(&device).Updates(updates).Error; err != nil {
+	newModelName := device.ModelName
+	if val, exists := body["model_name"]; exists {
+		if s, ok := val.(string); ok && s != device.ModelName {
+			newModelName = s
+			hasChanges = true
+		}
+	}
+
+	newGeneralInfo := device.GeneralInfo
+	if val, exists := body["general_info"]; exists {
+		if s, ok := val.(string); ok && s != device.GeneralInfo {
+			newGeneralInfo = s
+			hasChanges = true
+		}
+	}
+
+	newPorts := device.Ports
+	if val, exists := body["ports"]; exists {
+		portsMap := make(models.JSONMap)
+		if m, ok := val.(map[string]any); ok {
+			for k, v := range m {
+				portsMap[k] = v
+			}
+		}
+		oldBytes, _ := json.Marshal(device.Ports)
+		newBytes, _ := json.Marshal(portsMap)
+		if string(oldBytes) != string(newBytes) {
+			newPorts = portsMap
+			hasChanges = true
+		}
+	}
+
+	if hasChanges {
+		var assetCount int64
+		database.DB.Model(&models.Asset{}).Where("device_model_id = ?", id).Count(&assetCount)
+
+		if assetCount > 0 {
+			// Bump revision number!
+			device.Revision = device.Revision + 1
+		}
+
+		device.ManufacturerID = newManufacturerID
+		device.ModelName = newModelName
+		device.GeneralInfo = newGeneralInfo
+		device.Ports = newPorts
+
+		if err := database.DB.Save(&device).Error; err != nil {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update device: " + err.Error()})
+		}
+
+		if err := saveOrUpdateRevisionRecord(database.DB, &device); err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to save device revision: " + err.Error()})
 		}
 	}
 

@@ -275,7 +275,8 @@
         </div>
       </UCard>
 
-      <UCard>
+      <!-- Standard NIC Interfaces card (Hidden if Switch/Router, replaced with Switch Port Grid Panel) -->
+      <UCard v-if="!isSwitchOrRouter">
         <template #header>
           <div class="flex justify-between items-center">
             <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Network Interfaces (NIC / Ports)</h3>
@@ -297,6 +298,61 @@
         </div>
         <div v-else class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
           No network interfaces registered for this asset.
+        </div>
+      </UCard>
+
+      <!-- Switch/Router Chassis Port Panel Grid (Phase 8 Visual Cabling Diagram) -->
+      <UCard v-else class="bg-slate-950 border-slate-800 text-slate-100">
+        <template #header>
+          <div class="flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <UIcon name="i-heroicons-arrows-right-left" class="h-6 w-6 text-primary-500" />
+              <h3 class="text-lg font-bold text-white font-mono uppercase tracking-wide">Physical Interface Port Hub Panel</h3>
+            </div>
+            <UBadge color="emerald" variant="solid" size="xs" class="font-mono text-[9px] animate-pulse">LIVE PATCH PANEL</UBadge>
+          </div>
+        </template>
+
+        <div class="space-y-6">
+          <p class="text-xs text-slate-400 leading-normal font-mono">
+            Interactive switch/router patch bay. Port squares are color-coded based on active cabling link states. Click on any port to assign or tear down cross-connect patch links.
+          </p>
+
+          <div v-for="(count, type) in portGroups" :key="type" class="space-y-3">
+            <div class="flex items-center gap-2 border-b border-slate-800 pb-1">
+              <UIcon name="i-heroicons-cpu-chip" class="h-4 w-4 text-slate-400" />
+              <span class="text-xs font-bold uppercase tracking-wider font-mono text-slate-300">
+                {{ type }} Ports (Total: {{ count }})
+              </span>
+            </div>
+
+            <!-- Port Squares Grid (Col 12 Max per Row) -->
+            <div class="grid grid-cols-6 sm:grid-cols-12 gap-3 bg-slate-900 border border-slate-800 p-4 rounded-lg shadow-inner">
+              <div 
+                v-for="idx in count" 
+                :key="idx"
+                class="relative p-2 h-14 rounded border flex flex-col justify-between items-center select-none font-mono transition-all duration-200 cursor-pointer text-center group"
+                :class="portConnections[`${type}-${idx}`]
+                  ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-md shadow-emerald-500/5' 
+                  : 'bg-slate-950 hover:bg-slate-800 border-slate-800 text-slate-500 hover:border-slate-600 hover:text-slate-300'"
+                @click="openPortModal(type, idx)"
+              >
+                <!-- LED Status Dot -->
+                <span 
+                  class="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full"
+                  :class="portConnections[`${type}-${idx}`] ? 'bg-emerald-400 animate-pulse' : 'bg-slate-700'"
+                />
+                
+                <span class="text-sm font-bold mt-1">{{ idx }}</span>
+                <span class="text-[8px] uppercase tracking-wider text-slate-400 block font-semibold leading-none">{{ type }}</span>
+
+                <!-- Hover Cable Info Tooltip -->
+                <span v-if="portConnections[`${type}-${idx}`]" class="absolute -bottom-1 left-1/2 -translate-x-1/2 translate-y-full hidden group-hover:block z-30 bg-black text-emerald-400 border border-emerald-500 text-[10px] px-2 py-1 rounded font-mono shadow-lg whitespace-nowrap">
+                  Connected
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </UCard>
 
@@ -550,6 +606,52 @@
         </form>
       </UCard>
     </UModal>
+
+    <!-- Port Connector Modal -->
+    <UModal v-model="isPortModalOpen">
+      <UCard>
+        <template #header>
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-semibold leading-6 text-gray-900 dark:text-white flex items-center gap-1.5">
+              <UIcon name="i-heroicons-bolt" class="text-primary-500 h-5 w-5" />
+              Configure Connection: Port {{ activePortKey }}
+            </h3>
+            <UButton color="gray" variant="ghost" icon="i-heroicons-x-mark" class="-my-1" @click="isPortModalOpen = false" />
+          </div>
+        </template>
+        
+        <div class="space-y-4">
+          <p class="text-xs text-gray-500 leading-normal">
+            Select another active network or host asset to connect to port <span class="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-primary-600 font-bold">{{ activePortKey }}</span>. Connecting standardizes the cabling diagram and maps downstream/upstream assets automatically.
+          </p>
+
+          <UFormGroup label="Connected Asset Target">
+            <USelectMenu 
+              v-model="selectedConnectionTarget" 
+              :options="connectableAssets" 
+              option-attribute="name" 
+              placeholder="Select asset to connect..." 
+              searchable
+              clearable
+              class="w-full"
+            />
+          </UFormGroup>
+
+          <div v-if="currentConnectionAsset" class="p-3 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-900/40 text-xs flex justify-between items-center font-mono">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-slate-400 block leading-none">Currently Connected To:</span>
+              <span class="text-green-600 dark:text-green-400 font-bold mt-1 block">{{ currentConnectionAsset.name }} ({{ currentConnectionAsset.type }})</span>
+            </div>
+            <UButton size="xs" color="red" variant="subtle" icon="i-heroicons-x-mark" @click="disconnectPort">Disconnect</UButton>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-150 dark:border-slate-800">
+            <UButton color="gray" variant="ghost" @click="isPortModalOpen = false">Cancel</UButton>
+            <UButton color="primary" icon="i-heroicons-check" @click="connectPort">Save Connection</UButton>
+          </div>
+        </div>
+      </UCard>
+    </UModal>
   </div>
 </template>
 
@@ -565,6 +667,93 @@ const { fetchRelationships } = useRelationships()
 
 const isMaintenanceOpen = ref(false)
 const isInterfaceOpen = ref(false)
+
+const isPortModalOpen = ref(false)
+const activePortKey = ref('')
+const selectedConnectionTarget = ref(null)
+const allAssetsList = ref([])
+
+const fetchAllAssets = async () => {
+  try {
+    const { data } = await useAssets().fetchAssets({ limit: 1000 })
+    allAssetsList.value = data.value || []
+  } catch (err) {
+    console.error('Failed to load assets list for port mapping:', err)
+  }
+}
+
+const isSwitchOrRouter = computed(() => {
+  if (!asset.value) return false
+  const type = asset.value.type
+  const subtype = asset.value.properties?.network_subtype
+  return type === 'Network' && (subtype === 'Router' || subtype === 'Switch (L2)' || subtype === 'Switch (L3)' || type === 'Router' || type === 'Switch')
+})
+
+const portGroups = computed(() => {
+  const portsObj = asset.value?.device_model_revision_details?.ports || asset.value?.device_model?.ports
+  if (portsObj && Object.keys(portsObj).length > 0) {
+    return portsObj
+  }
+  return { 'RJ45': 24, 'SFP+': 4 }
+})
+
+const portConnections = computed(() => {
+  return asset.value?.properties?.port_connections || {}
+})
+
+const connectableAssets = computed(() => {
+  return allAssetsList.value.filter(a => a.id !== assetId)
+})
+
+const currentConnectionAsset = computed(() => {
+  if (!activePortKey.value) return null
+  const connectedId = portConnections.value[activePortKey.value]
+  if (!connectedId) return null
+  return allAssetsList.value.find(a => a.id === connectedId) || null
+})
+
+const openPortModal = (portType, index) => {
+  activePortKey.value = `${portType}-${index}`
+  const connectedId = portConnections.value[activePortKey.value]
+  if (connectedId) {
+    selectedConnectionTarget.value = allAssetsList.value.find(a => a.id === connectedId) || null
+  } else {
+    selectedConnectionTarget.value = null
+  }
+  isPortModalOpen.value = true
+}
+
+const connectPort = async () => {
+  if (!activePortKey.value) return
+  
+  const properties = { ...(asset.value?.properties || {}) }
+  if (!properties.port_connections) {
+    properties.port_connections = {}
+  } else {
+    properties.port_connections = { ...properties.port_connections }
+  }
+
+  if (selectedConnectionTarget.value) {
+    properties.port_connections[activePortKey.value] = selectedConnectionTarget.value.id
+  } else {
+    delete properties.port_connections[activePortKey.value]
+  }
+
+  try {
+    await updateAsset(assetId, { properties })
+    isPortModalOpen.value = false
+    await refreshAsset()
+    await fetchAllAssets()
+  } catch (error) {
+    console.error('Failed to update port connection:', error)
+    alert('Failed to update port connection')
+  }
+}
+
+const disconnectPort = async () => {
+  selectedConnectionTarget.value = null
+  await connectPort()
+}
 
 const { data: asset, pending, error, refresh: refreshAsset } = await fetchAsset(assetId)
 
@@ -764,6 +953,7 @@ const deleteInterface = async (id) => {
 }
 
 onMounted(() => {
+  fetchAllAssets()
   if (route.query.edit === 'true') {
     watch(asset, (newAsset) => {
       if (newAsset && !isEditPropertiesOpen.value) {
