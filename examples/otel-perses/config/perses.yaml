@@ -1,0 +1,8 @@
+database:
+  file:
+    directory: /var/lib/perses
+schemas:
+  folders:
+    - /etc/perses/schemas
+security:
+  readonly: false

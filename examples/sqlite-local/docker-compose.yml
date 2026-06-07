@@ -1,12 +1,13 @@
 version: '3.8'
 
-# Northstar CMDB - Public Pre-Built Local Environment Orchestration.
-# This compose file pulls pre-built multi-architecture container images directly
-# from the GitHub Container Registry (ghcr.io) for instant offline-ready local evaluation.
+# Northstar CMDB - SQLite Local Quickstart Environment.
+# This compose file spins up the complete Go backend and Nuxt frontend using SQLite.
+# Data is mounted locally in relative sub-folders on your disk for easy visibility and local testing.
 
 services:
   northstar-backend:
     image: ghcr.io/astrona-io/northstar-backend:latest
+    container_name: northstar-backend-sqlite
     ports:
       - "8000:8000"
     environment:
@@ -14,28 +15,25 @@ services:
       - DATABASE_URL=/app/data/cmdb.db
       - OTEL_ENABLED=false
     volumes:
-      # Persist SQLite database file locally on your host machine
-      - backend-data:/app/data
+      # Local relative bind mount for easy database visibility and testing
+      - ./data/sqlite:/app/data
     networks:
       - northstar-network
     restart: always
 
   northstar-frontend:
     image: ghcr.io/astrona-io/northstar-frontend:latest
+    container_name: northstar-frontend-sqlite
     ports:
       - "3000:3000"
     environment:
       - NUXT_PUBLIC_API_BASE=http://localhost:8000/api
-      # Let the Nuxt server-side requests talk directly to the backend container over internal DNS
       - NUXT_API_BASE_INTERNAL=http://northstar-backend:8000/api
     depends_on:
       - northstar-backend
     networks:
       - northstar-network
     restart: always
-
-volumes:
-  backend-data:
 
 networks:
   northstar-network:

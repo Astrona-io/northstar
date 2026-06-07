@@ -1,0 +1,96 @@
+version: '3.8'
+
+# Northstar CMDB - OpenTelemetry & CNCF Perses Local Observability Sandbox.
+# This compose file orchestrates the entire application linked with
+# OpenTelemetry Collector, Prometheus metrics scraping, and Perses visualization.
+
+services:
+  northstar-postgres:
+    image: postgres:15-alpine
+    container_name: northstar-postgres-otel
+    environment:
+      - POSTGRES_DB=northstar
+      - POSTGRES_USER=northstar
+      - POSTGRES_PASSWORD=northstar_secure_pass
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - northstar-network
+    restart: always
+
+  northstar-backend:
+    image: ghcr.io/astrona-io/northstar-backend:latest
+    container_name: northstar-backend-otel
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_URL=postgres://northstar:northstar_secure_pass@northstar-postgres:5432/northstar?sslmode=disable
+      - OTEL_ENABLED=true
+      # Export traces & metrics over high-speed gRPC directly to the OTel collector
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    depends_on:
+      - northstar-postgres
+      - otel-collector
+    networks:
+      - northstar-network
+    restart: always
+
+  northstar-frontend:
+    image: ghcr.io/astrona-io/northstar-frontend:latest
+    container_name: northstar-frontend-otel
+    ports:
+      - "3000:3000"
+    environment:
+      - NUXT_PUBLIC_API_BASE=http://localhost:8000/api
+      - NUXT_API_BASE_INTERNAL=http://northstar-backend:8000/api
+    depends_on:
+      - northstar-backend
+    networks:
+      - northstar-network
+    restart: always
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+      - "8889:8889" # Prometheus metrics exporter endpoint
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    networks:
+      - northstar-network
+    restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-otel
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yaml:/etc/prometheus/prometheus.yml
+      - ./data/prometheus:/prometheus
+    depends_on:
+      - otel-collector
+    networks:
+      - northstar-network
+    restart: always
+
+  perses:
+    image: persesdev/perses:latest
+    container_name: perses-otel
+    ports:
+      - "8080:8080" # Perses Web UI
+    volumes:
+      - ./config/perses.yaml:/etc/perses/perses.yaml
+      - ./data/perses:/var/lib/perses
+    depends_on:
+      - prometheus
+    networks:
+      - northstar-network
+    restart: always
+
+networks:
+  northstar-network:
+    driver: bridge

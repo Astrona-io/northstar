@@ -1,0 +1,72 @@
+version: '3.8'
+
+# Northstar CMDB - PostgreSQL & pgAdmin Isolated Environment.
+# This compose file spins up an isolated PostgreSQL database and pgAdmin web client.
+# Data is mounted locally in relative sub-folders on your disk for easy visibility and local testing.
+
+services:
+  northstar-postgres:
+    image: postgres:15-alpine
+    container_name: northstar-postgres-local
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=northstar
+      - POSTGRES_USER=northstar
+      - POSTGRES_PASSWORD=northstar_secure_pass
+    volumes:
+      # Local relative bind mount for easy database visibility and testing
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - northstar-network
+    restart: always
+
+  northstar-pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: northstar-pgadmin-local
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@astrona.io
+      - PGADMIN_DEFAULT_PASSWORD=admin_secure_pass
+    volumes:
+      # Local relative bind mount for pgAdmin state configuration
+      - ./data/pgadmin:/var/lib/pgadmin
+    depends_on:
+      - northstar-postgres
+    networks:
+      - northstar-network
+    restart: always
+
+  northstar-backend:
+    image: ghcr.io/astrona-io/northstar-backend:latest
+    container_name: northstar-backend-local
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_URL=postgres://northstar:northstar_secure_pass@northstar-postgres:5432/northstar?sslmode=disable
+      - OTEL_ENABLED=false
+    depends_on:
+      - northstar-postgres
+    networks:
+      - northstar-network
+    restart: always
+
+  northstar-frontend:
+    image: ghcr.io/astrona-io/northstar-frontend:latest
+    container_name: northstar-frontend-local
+    ports:
+      - "3000:3000"
+    environment:
+      - NUXT_PUBLIC_API_BASE=http://localhost:8000/api
+      - NUXT_API_BASE_INTERNAL=http://northstar-backend:8000/api
+    depends_on:
+      - northstar-backend
+    networks:
+      - northstar-network
+    restart: always
+
+networks:
+  northstar-network:
+    driver: bridge
