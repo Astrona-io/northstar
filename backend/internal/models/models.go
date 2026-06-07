@@ -209,15 +209,33 @@ func (m *MaintenanceWindow) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
+// PortTypeProfile represents a physical port type (e.g. RJ45, SFP+) and its supported speeds.
+type PortTypeProfile struct {
+	ID        string    `gorm:"primaryKey;type:varchar(36)" json:"id"`
+	Type      string    `gorm:"uniqueIndex" json:"type"` // e.g. "RJ45", "SFP", "SFP+"
+	Name      string    `json:"name"`                    // e.g. "RJ45 Copper", "SFP+ Optic"
+	Speeds    string    `gorm:"type:text" json:"speeds"` // JSON array of strings, e.g. ["10 Gbps", "1 Gbps"]
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+}
+
+func (m *PortTypeProfile) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.ID == "" {
+		m.ID = uuid.New().String()
+	}
+	return
+}
+
 // NetworkInterface represents a physical or virtual network interface card (NIC) or port.
 type NetworkInterface struct {
 	ID         string `gorm:"primaryKey;type:varchar(36)" json:"id"`
 	AssetID    string `gorm:"index" json:"asset_id"`
-	Name       string `gorm:"index" json:"name"`        // e.g. "eth0", "GigabitEthernet0/1", "Console"
+	NICName    string `gorm:"index" json:"nic_name"`    // Grouping field, e.g. "NIC 1" or "Motherboard NIC"
+	Name       string `gorm:"index" json:"name"`        // Port name, e.g. "NIC 1 - Port 1"
 	Type       string `json:"type"`                     // "ethernet", "management", "console", "sfp+", "fiber"
-	MACAddress string `json:"mac_address"`              // e.g. "00:1A:2B:3C:4D:5E"
-	IPAddress  string `json:"ip_address"`               // e.g. "192.168.10.15"
-	Speed      string `json:"speed"`                    // e.g. "1 Gbps", "10 Gbps", "9600 bps"
+	MACAddress  string `json:"mac_address"`                             // e.g. "00:1A:2B:3C:4D:5E"
+	IPv4Address string `gorm:"column:ipv4_address" json:"ipv4_address"` // e.g. "192.168.10.15"
+	IPv6Address string `gorm:"column:ipv6_address" json:"ipv6_address"` // e.g. "2001:db8::1"
+	Speed       string `json:"speed"`                                   // e.g. "1 Gbps", "10 Gbps", "9600 bps"
 	MTU        int    `gorm:"default:1500" json:"mtu"`  // e.g. 1500 (Standard) or 9000 (Jumbo Frames)
 	VLAN       string `json:"vlan"`                     // e.g. "VLAN 100"
 	Status     string `gorm:"default:up" json:"status"` // "up", "down"
@@ -318,6 +336,7 @@ type DeviceModel struct {
 	ModelName      string       `gorm:"index" json:"model_name"`
 	Categories     []Category   `gorm:"many2many:device_model_categories;" json:"categories"`
 	GeneralInfo    string       `json:"general_info"`
+	Subtype        string       `json:"subtype"` // e.g. "Switch (L3)", "Router", "Server", etc.
 	Revision       int          `gorm:"default:1" json:"revision"`
 	Ports          JSONMap      `gorm:"type:text" json:"ports"`
 	CreatedAt      time.Time    `gorm:"autoCreateTime" json:"created_at"`
@@ -340,6 +359,7 @@ type DeviceModelRevision struct {
 	Revision      int       `json:"revision"`
 	ModelName     string    `json:"model_name"`
 	GeneralInfo   string    `json:"general_info"`
+	Subtype       string    `json:"subtype"`
 	Ports         JSONMap   `gorm:"type:text" json:"ports"`
 	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
 }

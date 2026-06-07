@@ -1,0 +1,9 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "SFP+ High-Speed Fiber Port"
+spec:
+  type: "SFP+"
+  speeds:
+    - "10 Gbps"
+    - "1 Gbps"

@@ -729,6 +729,81 @@
               </UCard>
               </div>
 
+        <!-- Tab 6 Sub-Page: Standard Port Type Profiles -->
+        <div v-if="activeTab === 'interfaces'" class="space-y-6">
+          <UCard>
+            <template #header>
+              <div class="flex justify-between items-center text-xs">
+                <span class="font-bold font-mono text-slate-800 dark:text-white uppercase font-bold tracking-wide flex items-center gap-1.5">
+                  <UIcon name="i-heroicons-cpu-chip" class="h-4 w-4 text-primary-500" />
+                  Standard Interface Port Types & Speeds
+                </span>
+                <UButton size="xs" color="gray" variant="ghost" label="Back to Admin Panel" icon="i-heroicons-arrow-left" @click="backToHub" />
+              </div>
+            </template>
+
+            <div class="space-y-6">
+              <!-- Creator Card -->
+              <UCard v-if="canMutate" class="bg-slate-50 dark:bg-slate-800/20 border-dashed">
+                <template #header>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-white font-mono">Register Standard Port Type</h4>
+                </template>
+                <form @submit.prevent="saveInterfaceProfile" class="space-y-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                    <UFormGroup label="Port Type Name (e.g. RJ45 Copper)" class="text-xs font-semibold">
+                      <UInput v-model="profileForm.name" placeholder="e.g. RJ45 Copper" required />
+                    </UFormGroup>
+                    <UFormGroup label="Interface Type Keyword (e.g. RJ45, SFP+)" class="text-xs font-semibold">
+                      <UInput v-model="profileForm.type" placeholder="e.g. RJ45" required />
+                    </UFormGroup>
+                    <UFormGroup label="Supported Speeds (comma-separated)" class="text-xs font-semibold">
+                      <UInput v-model="profileForm.speeds_csv" placeholder="e.g. 10 Gbps, 1 Gbps, 100 Mbps" required />
+                    </UFormGroup>
+                  </div>
+                  <div class="flex justify-end gap-2 mt-2">
+                    <UButton type="submit" :loading="isSavingProfile" icon="i-heroicons-plus" color="primary">
+                      Save Port Type Spec
+                    </UButton>
+                  </div>
+                </form>
+              </UCard>
+
+              <div v-if="pendingProfiles" class="flex justify-center p-12">
+                <UIcon name="i-heroicons-arrow-path" class="animate-spin h-10 w-10 text-primary-500" />
+              </div>
+
+              <!-- Table -->
+              <UTable v-else :rows="interfaceProfiles || []" :columns="profileColumns">
+                <template #name-data="{ row }">
+                  <span class="font-bold text-xs font-mono text-slate-800 dark:text-white">{{ row.name }}</span>
+                </template>
+                <template #type-data="{ row }">
+                  <UBadge color="gray" variant="subtle" class="font-mono text-[10px] uppercase font-bold">{{ row.type }}</UBadge>
+                </template>
+                <template #speeds-data="{ row }">
+                  <div class="flex flex-wrap gap-1">
+                    <UBadge 
+                      v-for="spd in safeParseJSONList(row.speeds)" 
+                      :key="spd" 
+                      color="blue" 
+                      variant="subtle" 
+                      class="font-mono text-[9px]"
+                    >
+                      {{ spd }}
+                    </UBadge>
+                  </div>
+                </template>
+                <template #actions-data="{ row }">
+                  <UButton v-if="canDelete" size="xs" color="red" variant="ghost" icon="i-heroicons-trash" @click="removeProfile(row.id)">
+                    Delete
+                  </UButton>
+                  <span v-else class="text-xs text-gray-400">Admin Only</span>
+                </template>
+              </UTable>
+            </div>
+          </UCard>
+        </div>
+
         <!-- Tab 7 Sub-Page: Bulk Ingest Engine (Phase 1 Bulk Importing & Cabling) -->
         <div v-if="activeTab === 'importer'" class="space-y-6">
           <UCard>
@@ -1335,6 +1410,7 @@ const { data: allAssetsList } = await fetchAssets()
 
 // Fetch dynamic categories (Phase 1 Dynamic Categories)
 const { data: categories, pending: pendingCategories, refresh: refreshCategories } = await useFetch(`${apiBase}/categories/`)
+const { data: interfaceProfiles, pending: pendingProfiles, refresh: refreshProfiles } = await useFetch(`${apiBase}/port-types/`)
 
 // SPA routing activeTab URL retaining query param mapping (Phase 1 GitLab Site Admin Re-org)
 const activeTab = computed({
@@ -1379,6 +1455,7 @@ const adminTabs = [
   { key: 'users', label: 'User Operator Policies', icon: 'i-heroicons-users', desc: 'Configure operator access permissions and manage policy overrides.' },
   { key: 'discovery', label: 'Subnet Sweeper & Cloud Sync', icon: 'i-heroicons-bolt', desc: 'Audit running standard services on localhost or crawl AWS cloud resources.' },
   { key: 'dcim', label: 'Datacenters & Racks (DCIM)', icon: 'i-heroicons-server', desc: 'Deploy physical datacenter location profiles, uplink connection speeds, and deploy cabinets.' },
+  { key: 'interfaces', label: 'Standard Interface Profiles', icon: 'i-heroicons-cpu-chip', desc: 'Pre-configure standard Network Interface Card (NIC) profiles, port speeds, and port counts to easily reuse across assets.' },
   { key: 'importer', label: 'Bulk Ingest Engine', icon: 'i-heroicons-circle-stack', desc: 'Upload batch CSV hardware list manifests, execute dynamic GORM regex pattern validations, and perform bulk CMDB creations safely.' },
   { key: 'categories', label: 'Category & Icon Manager', icon: 'i-heroicons-squares-plus', desc: 'Manage CMDB asset categories, assign custom Heroicons styles dynamically, and link nested sub-group card portals.' },
   { key: 'fields', label: 'Dynamic Custom Fields', icon: 'i-heroicons-tag', desc: 'Define user-defined dynamic meta-properties and schema validation requirements.' },
@@ -2153,6 +2230,79 @@ const executeBulkCabling = async () => {
     alert('Bulk cabling failed midway: check system permissions or port limits.')
   } finally {
     isExecutingCabling.value = false
+  }
+}
+
+// ----------------------------------------
+// Part 5.5: Standard Interface Profiles (Admin Panel Operations)
+// ----------------------------------------
+const isSavingProfile = ref(false)
+const profileForm = ref({
+  name: '',
+  type: 'RJ45',
+  speeds_csv: '10 Gbps, 1 Gbps, 100 Mbps'
+})
+
+const profileColumns = [
+  { key: 'name', label: 'Port Type Name' },
+  { key: 'type', label: 'Interface Keyword' },
+  { key: 'speeds', label: 'Supported Speeds' },
+  { key: 'actions', label: 'Control' }
+]
+
+const safeParseJSONList = (jsonStr) => {
+  try {
+    return JSON.parse(jsonStr) || []
+  } catch (err) {
+    return []
+  }
+}
+
+const saveInterfaceProfile = async () => {
+  isSavingProfile.value = true
+  try {
+    const speedsArray = profileForm.value.speeds_csv
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s !== '')
+
+    const payload = {
+      name: profileForm.value.name,
+      type: profileForm.value.type,
+      speeds: JSON.stringify(speedsArray)
+    }
+    await $fetch(`${apiBase}/port-types`, {
+      method: 'POST',
+      body: payload,
+      headers: getAuthHeader()
+    })
+    await refreshProfiles()
+    alert('Standard port type profile successfully saved and catalogued.')
+    profileForm.value = {
+      name: '',
+      type: 'RJ45',
+      speeds_csv: '10 Gbps, 1 Gbps, 100 Mbps'
+    }
+  } catch (err) {
+    console.error('Failed to save profile template:', err)
+    alert('Failed to save profile template. Check unique type constraints.')
+  } finally {
+    isSavingProfile.value = false
+  }
+}
+
+const removeProfile = async (id) => {
+  if (!confirm('Are you sure you want to delete this standard interface NIC template?')) return
+  try {
+    await $fetch(`${apiBase}/port-types/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeader()
+    })
+    await refreshProfiles()
+    alert('NIC profile template deleted from catalog.')
+  } catch (err) {
+    console.error('Failed to delete NIC profile:', err)
+    alert('Delete failed.')
   }
 }
 

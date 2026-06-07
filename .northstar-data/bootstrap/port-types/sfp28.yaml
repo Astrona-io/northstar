@@ -1,0 +1,9 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "SFP28 High-Speed Interface"
+spec:
+  type: "SFP28"
+  speeds:
+    - "25 Gbps"
+    - "10 Gbps"

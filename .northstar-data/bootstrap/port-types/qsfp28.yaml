@@ -1,0 +1,9 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "QSFP28 Ultra-High-Speed Port"
+spec:
+  type: "QSFP28"
+  speeds:
+    - "100 Gbps"
+    - "25 Gbps"

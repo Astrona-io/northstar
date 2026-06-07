@@ -58,7 +58,6 @@ const columns = [
   { key: 'name', label: 'Name' },
   { key: 'type', label: 'Type' },
   { key: 'location', label: 'Physical Location' }, // Phase 1 Location mapping column
-  { key: 'ip_address', label: 'IP Address' },
   { key: 'maintenance_status', label: 'Maintenance' },
   { key: 'status', label: 'Status' },
   { key: 'actions', label: 'Actions' }

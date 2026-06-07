@@ -45,16 +45,26 @@
           <UInput v-model="form.model_name" placeholder="e.g. Catalyst 9300-48UX, PowerEdge R740" required />
         </UFormGroup>
 
-        <!-- Multi-Category Selection (Phase 2 Catalog Update - UniFi Switch/Router hybrid support) -->
-        <UFormGroup label="Device Categories (Multi-select, defaults to 'global')">
-          <USelectMenu 
-            v-model="selectedCategoryIDs" 
-            :options="categories" 
-            multiple 
-            option-attribute="name" 
-            value-attribute="id" 
-            placeholder="Select hardware category tags..." 
-            searchable 
+        <!-- Equipment Classification (One Device can only be One thing!) -->
+        <UFormGroup label="Equipment Classification" class="text-xs font-semibold">
+          <USelect 
+            v-model="form.subtype" 
+            :options="[
+              'Server',
+              'Database',
+              'Router',
+              'Switch (L2)',
+              'Switch (L3)',
+              'Access Point (AP)',
+              'Firewall',
+              'Load Balancer',
+              'Industrial PLC',
+              'Edge Gateway',
+              'Smart IP Camera',
+              'Environment Sensor',
+              'Other'
+            ]" 
+            required 
           />
         </UFormGroup>
 
@@ -154,7 +164,8 @@ const portsList = ref([])
 const form = ref({
   manufacturer_id: null,
   model_name: '',
-  general_info: ''
+  general_info: '',
+  subtype: 'Server'
 })
 
 const addPortConfigRow = () => {
@@ -192,7 +203,8 @@ watch(() => props.modelValue, (isOpenVal) => {
       form.value = {
         manufacturer_id: props.device.manufacturer_id,
         model_name: props.device.model_name,
-        general_info: props.device.general_info
+        general_info: props.device.general_info,
+        subtype: props.device.subtype || 'Server'
       }
       selectedCategoryIDs.value = props.device.categories ? props.device.categories.map(c => c.id) : []
       if (props.device.ports) {
@@ -204,7 +216,7 @@ watch(() => props.modelValue, (isOpenVal) => {
         portsList.value = []
       }
     } else {
-      form.value = { manufacturer_id: null, model_name: '', general_info: '' }
+      form.value = { manufacturer_id: null, model_name: '', general_info: '', subtype: 'Server' }
       selectedCategoryIDs.value = []
       portsList.value = []
     }

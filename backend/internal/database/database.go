@@ -61,6 +61,7 @@ func InitDB() (*gorm.DB, error) {
 	err = db.AutoMigrate(
 		&models.Asset{},
 		&models.MaintenanceWindow{},
+		&models.PortTypeProfile{},
 		&models.NetworkInterface{},
 		&models.AuditLog{},
 		&models.AssetRelationship{},

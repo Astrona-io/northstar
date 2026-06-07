@@ -1,0 +1,11 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "OSFP Octal Super-Speed Port"
+spec:
+  type: "OSFP"
+  speeds:
+    - "800 Gbps"
+    - "400 Gbps"
+    - "200 Gbps"
+    - "100 Gbps"

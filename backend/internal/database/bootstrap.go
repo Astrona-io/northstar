@@ -2,6 +2,7 @@ package database
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
@@ -75,6 +76,18 @@ type PermissionManifest struct {
 	Spec struct {
 		Effect      string `yaml:"effect"`
 		Description string `yaml:"description"`
+	} `yaml:"spec"`
+}
+
+type PortTypeManifest struct {
+	ApiVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Metadata   struct {
+		Name string `yaml:"name"`
+	} `yaml:"metadata"`
+	Spec struct {
+		Type   string   `yaml:"type"`
+		Speeds []string `yaml:"speeds"`
 	} `yaml:"spec"`
 }
 
@@ -351,6 +364,55 @@ func ReconcileSeedingYAML(db *gorm.DB) error {
 							// Update role if changed
 							user.Role = m.Spec.Role
 							db.Save(&user)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 6. Reconcile Port Types (port-types/*.yaml)
+	portsPath := filepath.Join(basePath, "port-types")
+	if _, err := os.Stat(portsPath); err == nil {
+		files, err := os.ReadDir(portsPath)
+		if err == nil {
+			for _, f := range files {
+				if !f.IsDir() && (strings.HasSuffix(f.Name(), ".yaml") || strings.HasSuffix(f.Name(), ".yml")) {
+					b, err := os.ReadFile(filepath.Join(portsPath, f.Name()))
+					if err == nil {
+						decoder := yaml.NewDecoder(bytes.NewReader(b))
+						for {
+							var m PortTypeManifest
+							if err := decoder.Decode(&m); err != nil {
+								if err == io.EOF {
+									break
+								}
+								log.Printf("[Bootstrap Engine] Error decoding port type file %s: %v\n", f.Name(), err)
+								return err
+							}
+							if m.Kind == "PortType" && m.Metadata.Name != "" {
+								speedsJson, _ := json.Marshal(m.Spec.Speeds)
+								
+								var existing models.PortTypeProfile
+								err := db.First(&existing, "type = ?", m.Spec.Type).Error
+								if err != nil && err == gorm.ErrRecordNotFound {
+									// Create new
+									profile := models.PortTypeProfile{
+										Type:   m.Spec.Type,
+										Name:   m.Metadata.Name,
+										Speeds: string(speedsJson),
+									}
+									if err := db.Create(&profile).Error; err != nil {
+										return err
+									}
+									log.Printf("[Bootstrap Engine] Seeded Port Type Profile: %s (Speeds: %v)\n", profile.Name, m.Spec.Speeds)
+								} else {
+									// Update existing
+									existing.Name = m.Metadata.Name
+									existing.Speeds = string(speedsJson)
+									db.Save(&existing)
+								}
+							}
 						}
 					}
 				}
