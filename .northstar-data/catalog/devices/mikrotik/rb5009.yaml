@@ -1,0 +1,13 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "MikroTik"
+  website: "https://mikrotik.com"
+spec:
+  devices:
+    - model: "RB5009UG+S+IN"
+      subtype: "Router"
+      generalInfo: "Heavy-duty home lab router with 7x 1G ports, 1x 2.5G port, and 1x 10G SFP+ port"
+      ports:
+        RJ45: 8
+        SFP+: 1

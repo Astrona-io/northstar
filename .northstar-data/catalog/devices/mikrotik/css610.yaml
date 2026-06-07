@@ -1,0 +1,13 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "MikroTik"
+  website: "https://mikrotik.com"
+spec:
+  devices:
+    - model: "CSS610-8G-2S+IN"
+      subtype: "Switch (L2)"
+      generalInfo: "Managed Layer 2 switch with 8x Gigabit RJ45 ports and 2x 10G SFP+ ports"
+      ports:
+        RJ45: 8
+        SFP+: 2

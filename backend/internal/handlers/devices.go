@@ -2,12 +2,17 @@ package handlers
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"cmdb-backend/internal/database"
 	"cmdb-backend/internal/models"
 
 	"github.com/labstack/echo/v4"
+	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 )
 
@@ -47,6 +52,7 @@ type DeviceModelCreateReq struct {
 	GeneralInfo    string         `json:"general_info"`
 	Ports          models.JSONMap `json:"ports"`
 	Subtype        string         `json:"subtype"`
+	IsImported     bool           `json:"is_imported"`
 }
 
 // CreateDeviceModel handles POST /api/devices/
@@ -86,12 +92,66 @@ func CreateDeviceModel(c echo.Context) error {
 		Categories:     cats,
 		GeneralInfo:    req.GeneralInfo,
 		Subtype:        req.Subtype,
+		IsImported:     req.IsImported,
 		Revision:       1,
 		Ports:          req.Ports,
 	}
 
 	if err := database.DB.Create(&device).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to create device spec: " + err.Error()})
+	}
+
+	// Dynamic Port-Interface Auto-Provisioning on Spec Import (Full Device Info + Interfaces)
+	for portType := range device.Ports {
+		var profile models.PortTypeProfile
+		err := database.DB.Where("type = ?", portType).First(&profile).Error
+		if err != nil && err == gorm.ErrRecordNotFound {
+			name := portType + " Interface Port"
+			speeds := "1 Gbps"
+			switch strings.ToUpper(portType) {
+			case "RJ45":
+				name = "RJ45 Copper Port"
+				speeds = "10 Gbps, 1 Gbps, 100 Mbps, 10 Mbps"
+			case "SFP":
+				name = "SFP Optical Slot"
+				speeds = "1 Gbps"
+			case "SFP+":
+				name = "SFP+ Optical Slot"
+				speeds = "10 Gbps, 1 Gbps"
+			case "SFP28":
+				name = "SFP28 Optical Slot"
+				speeds = "25 Gbps, 10 Gbps"
+			case "QSFP+":
+				name = "QSFP+ Optical Slot"
+				speeds = "40 Gbps, 10 Gbps"
+			case "QSFP28":
+				name = "QSFP28 Optical Slot"
+				speeds = "100 Gbps, 25 Gbps, 10 Gbps"
+			case "QSFP56":
+				name = "QSFP56 Optical Slot"
+				speeds = "200 Gbps, 100 Gbps"
+			case "QSFP-DD":
+				name = "QSFP-DD Double-Density Slot"
+				speeds = "400 Gbps, 100 Gbps"
+			case "OSFP":
+				name = "OSFP Octal Slot"
+				speeds = "800 Gbps, 400 Gbps"
+			}
+
+			speedsList := []string{}
+			for _, s := range strings.Split(speeds, ",") {
+				speedsList = append(speedsList, strings.TrimSpace(s))
+			}
+			speedsJSON, _ := json.Marshal(speedsList)
+
+			profile = models.PortTypeProfile{
+				Type:   portType,
+				Name:   name,
+				Speeds: string(speedsJSON),
+			}
+			database.DB.Create(&profile)
+			log.Printf("[Catalog Seeder] Dynamically auto-provisioned PortTypeProfile: %s (%s)\n", portType, speeds)
+		}
 	}
 
 	// Create first revision record
@@ -237,8 +297,61 @@ func UpdateDeviceModel(c echo.Context) error {
 			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update device: " + err.Error()})
 		}
 
+		// Dynamic Port-Interface Auto-Provisioning on Spec Update (Full Device Info + Interfaces)
+		for portType := range device.Ports {
+			var profile models.PortTypeProfile
+			err := database.DB.Where("type = ?", portType).First(&profile).Error
+			if err != nil && err == gorm.ErrRecordNotFound {
+				name := portType + " Interface Port"
+				speeds := "1 Gbps"
+				switch strings.ToUpper(portType) {
+				case "RJ45":
+					name = "RJ45 Copper Port"
+					speeds = "10 Gbps, 1 Gbps, 100 Mbps, 10 Mbps"
+				case "SFP":
+					name = "SFP Optical Slot"
+					speeds = "1 Gbps"
+				case "SFP+":
+					name = "SFP+ Optical Slot"
+					speeds = "10 Gbps, 1 Gbps"
+				case "SFP28":
+					name = "SFP28 Optical Slot"
+					speeds = "25 Gbps, 10 Gbps"
+				case "QSFP+":
+					name = "QSFP+ Optical Slot"
+					speeds = "40 Gbps, 10 Gbps"
+				case "QSFP28":
+					name = "QSFP28 Optical Slot"
+					speeds = "100 Gbps, 25 Gbps, 10 Gbps"
+				case "QSFP56":
+					name = "QSFP56 Optical Slot"
+					speeds = "200 Gbps, 100 Gbps"
+				case "QSFP-DD":
+					name = "QSFP-DD Double-Density Slot"
+					speeds = "400 Gbps, 100 Gbps"
+				case "OSFP":
+					name = "OSFP Octal Slot"
+					speeds = "800 Gbps, 400 Gbps"
+				}
+
+				speedsList := []string{}
+				for _, s := range strings.Split(speeds, ",") {
+					speedsList = append(speedsList, strings.TrimSpace(s))
+				}
+				speedsJSON, _ := json.Marshal(speedsList)
+
+				profile = models.PortTypeProfile{
+					Type:   portType,
+					Name:   name,
+					Speeds: string(speedsJSON),
+				}
+				database.DB.Create(&profile)
+				log.Printf("[Catalog Seeder] Dynamically auto-provisioned PortTypeProfile: %s (%s)\n", portType, speeds)
+			}
+		}
+
 		if err := saveOrUpdateRevisionRecord(database.DB, &device); err != nil {
-			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to save device revision: " + err.Error()})
+			return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to update device revision: " + err.Error()})
 		}
 	}
 
@@ -292,4 +405,266 @@ func DeleteDeviceModel(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, echo.Map{"message": "Device deleted successfully"})
+}
+
+type CatalogDevice struct {
+	Model       string         `yaml:"model"`
+	Subtype     string         `yaml:"subtype"`
+	GeneralInfo string         `yaml:"generalInfo"`
+	Ports       models.JSONMap `yaml:"ports"`
+}
+
+type DeviceCatalogManifest struct {
+	ApiVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Metadata   struct {
+		Manufacturer string `yaml:"manufacturer"`
+		Website      string `yaml:"website"`
+	} `yaml:"metadata"`
+	Spec struct {
+		Devices []CatalogDevice `yaml:"devices"`
+	} `yaml:"spec"`
+}
+
+// SyncHardwareCatalog handles POST /api/devices/catalog/sync (Admin Only)
+func SyncHardwareCatalog(c echo.Context) error {
+	basePath := "./.northstar-data/catalog/devices"
+	if _, err := os.Stat(basePath); os.IsNotExist(err) {
+		basePath = "../.northstar-data/catalog/devices"
+		if _, err := os.Stat(basePath); os.IsNotExist(err) {
+			basePath = "../../.northstar-data/catalog/devices"
+			if _, err := os.Stat(basePath); os.IsNotExist(err) {
+				return c.JSON(http.StatusNotFound, echo.Map{"error": "Hardware catalog data folder not found"})
+			}
+		}
+	}
+
+	var syncedCount int
+
+	err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && (strings.HasSuffix(info.Name(), ".yaml") || strings.HasSuffix(info.Name(), ".yml")) {
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+
+			var m DeviceCatalogManifest
+			if err := yaml.Unmarshal(b, &m); err != nil {
+				log.Printf("[Catalog Sync] Error parsing file %s: %v\n", info.Name(), err)
+				return nil
+			}
+
+			if m.Kind == "DeviceCatalog" && m.Metadata.Manufacturer != "" {
+				var manufacturer models.Manufacturer
+				err := database.DB.First(&manufacturer, "name = ?", m.Metadata.Manufacturer).Error
+				if err != nil && err == gorm.ErrRecordNotFound {
+					manufacturer = models.Manufacturer{
+						Name:    m.Metadata.Manufacturer,
+						Website: m.Metadata.Website,
+					}
+					database.DB.Create(&manufacturer)
+				}
+
+				for _, d := range m.Spec.Devices {
+					if d.Model == "" {
+						continue
+					}
+
+					var device models.DeviceModel
+					err := database.DB.First(&device, "model_name = ? AND manufacturer_id = ?", d.Model, manufacturer.ID).Error
+					if err != nil && err == gorm.ErrRecordNotFound {
+						device = models.DeviceModel{
+							ManufacturerID: manufacturer.ID,
+							ModelName:      d.Model,
+							GeneralInfo:    d.GeneralInfo,
+							Subtype:        d.Subtype,
+							IsImported:     true,
+							Revision:       1,
+							Ports:          d.Ports,
+						}
+						database.DB.Create(&device)
+						saveOrUpdateRevisionRecord(database.DB, &device)
+						syncedCount++
+					} else {
+						hasChanges := false
+						if !device.IsImported {
+							device.IsImported = true
+							hasChanges = true
+						}
+						if device.GeneralInfo != d.GeneralInfo {
+							device.GeneralInfo = d.GeneralInfo
+							hasChanges = true
+						}
+						if device.Subtype != d.Subtype {
+							device.Subtype = d.Subtype
+							hasChanges = true
+						}
+						oldBytes, _ := json.Marshal(device.Ports)
+						newBytes, _ := json.Marshal(d.Ports)
+						if string(oldBytes) != string(newBytes) {
+							device.Ports = d.Ports
+							hasChanges = true
+						}
+
+						if hasChanges {
+							var assetCount int64
+							database.DB.Model(&models.Asset{}).Where("device_model_id = ?", device.ID).Count(&assetCount)
+							if assetCount > 0 {
+								device.Revision = device.Revision + 1
+							}
+
+							database.DB.Save(&device)
+							saveOrUpdateRevisionRecord(database.DB, &device)
+							syncedCount++
+						}
+					}
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to synchronize hardware catalog: " + err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, echo.Map{
+		"message":      "Hardware catalog synchronized successfully",
+		"synced_count": syncedCount,
+	})
+}
+
+type CatalogModelJSON struct {
+	ID               string         `json:"id"`
+	Model            string         `json:"model"`
+	Subtype          string         `json:"subtype"`
+	GeneralInfo      string         `json:"general_info"`
+	Ports            models.JSONMap `json:"ports"`
+	IsImported       bool           `json:"is_imported"`
+	ImportedRevision int            `json:"imported_revision"`
+	UpdateAvailable  bool           `json:"update_available"`
+}
+
+type CatalogBrandJSON struct {
+	Brand   string             `json:"brand"`
+	Website string             `json:"website"`
+	Logo    string             `json:"logo"`
+	Models  []CatalogModelJSON `json:"models"`
+}
+
+// GetDeviceCatalog handles GET /api/devices/catalog (Explore Disk Catalog)
+func GetDeviceCatalog(c echo.Context) error {
+	basePath := "./.northstar-data/catalog/devices"
+	if _, err := os.Stat(basePath); os.IsNotExist(err) {
+		basePath = "../.northstar-data/catalog/devices"
+		if _, err := os.Stat(basePath); os.IsNotExist(err) {
+			basePath = "../../.northstar-data/catalog/devices"
+			if _, err := os.Stat(basePath); os.IsNotExist(err) {
+				return c.JSON(http.StatusNotFound, echo.Map{"error": "Hardware catalog data folder not found"})
+			}
+		}
+	}
+
+	// Load all existing device models to match and compare specs
+	var dbDevices []models.DeviceModel
+	database.DB.Preload("Manufacturer").Find(&dbDevices)
+
+	dbDeviceMap := make(map[string]models.DeviceModel)
+	for _, dev := range dbDevices {
+		key := strings.ToLower(dev.Manufacturer.Name) + "_" + strings.ToLower(dev.ModelName)
+		dbDeviceMap[key] = dev
+	}
+
+	brandMap := make(map[string]*CatalogBrandJSON)
+
+	err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && (strings.HasSuffix(info.Name(), ".yaml") || strings.HasSuffix(info.Name(), ".yml")) {
+			b, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+
+			var m DeviceCatalogManifest
+			if err := yaml.Unmarshal(b, &m); err != nil {
+				return nil
+			}
+
+			if m.Kind == "DeviceCatalog" && m.Metadata.Manufacturer != "" {
+				brandName := m.Metadata.Manufacturer
+				brand, ok := brandMap[brandName]
+				if !ok {
+					logo := "generic"
+					if strings.Contains(strings.ToLower(brandName), "ubiquiti") || strings.Contains(strings.ToLower(brandName), "unifi") {
+						logo = "ubiquiti"
+					} else if strings.Contains(strings.ToLower(brandName), "mikrotik") {
+						logo = "mikrotik"
+					}
+
+					brand = &CatalogBrandJSON{
+						Brand:   brandName,
+						Website: m.Metadata.Website,
+						Logo:    logo,
+						Models:  []CatalogModelJSON{},
+					}
+					brandMap[brandName] = brand
+				}
+
+				for _, d := range m.Spec.Devices {
+					if d.Model == "" {
+						continue
+					}
+
+					key := strings.ToLower(brandName) + "_" + strings.ToLower(d.Model)
+					dbDev, exists := dbDeviceMap[key]
+
+					isImported := false
+					importedRevision := 0
+					updateAvailable := false
+					dbID := ""
+
+					if exists {
+						isImported = true
+						importedRevision = dbDev.Revision
+						dbID = dbDev.ID
+
+						// Compare fields to check if an update is available on disk
+						oldBytes, _ := json.Marshal(dbDev.Ports)
+						newBytes, _ := json.Marshal(d.Ports)
+						if dbDev.GeneralInfo != d.GeneralInfo || dbDev.Subtype != d.Subtype || string(oldBytes) != string(newBytes) {
+							updateAvailable = true
+						}
+					}
+
+					brand.Models = append(brand.Models, CatalogModelJSON{
+						ID:               dbID,
+						Model:            d.Model,
+						Subtype:          d.Subtype,
+						GeneralInfo:      d.GeneralInfo,
+						Ports:            d.Ports,
+						IsImported:       isImported,
+						ImportedRevision: importedRevision,
+						UpdateAvailable:  updateAvailable,
+					})
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, echo.Map{"error": "Failed to read catalog: " + err.Error()})
+	}
+
+	result := []CatalogBrandJSON{}
+	for _, b := range brandMap {
+		result = append(result, *b)
+	}
+
+	return c.JSON(http.StatusOK, result)
 }

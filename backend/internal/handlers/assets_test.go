@@ -22,30 +22,9 @@ func setupTestDB() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	db.AutoMigrate(
-		&models.Asset{},
-		&models.MaintenanceWindow{},
-		&models.PortTypeProfile{},
-		&models.NetworkInterface{},
-		&models.AuditLog{},
-		&models.AssetRelationship{},
-		&models.Manufacturer{},
-		&models.Category{},
-		&models.SubGroup{},
-		&models.DeviceModel{},
-		&models.DeviceModelRevision{},
-		&models.Permission{},
-		&models.Group{},
-		&models.User{},
-		&models.DatacenterType{},
-		&models.DatacenterFloor{},
-		&models.DatacenterWall{},
-		&models.Datacenter{},
-		&models.Rack{},
-		&models.CustomField{},
-		&models.Webhook{},
-		&models.LicenseAgreement{},
-	)
+	if err := database.RunMigrations(db); err != nil {
+		panic("failed to run migrations: " + err.Error())
+	}
 	database.DB = db
 }
 

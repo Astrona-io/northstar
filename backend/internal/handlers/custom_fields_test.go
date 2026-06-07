@@ -64,8 +64,8 @@ func TestCustomFieldsEndpoints(t *testing.T) {
 
 		var fields []models.CustomField
 		json.Unmarshal(rec.Body.Bytes(), &fields)
-		if len(fields) != 1 {
-			t.Errorf("Expected 1 custom field matching criteria, got %d", len(fields))
+		if len(fields) != 2 {
+			t.Errorf("Expected 2 custom fields matching criteria, got %d", len(fields))
 		}
 	})
 

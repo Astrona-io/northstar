@@ -1,0 +1,13 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "Ubiquiti UniFi"
+  website: "https://ui.com"
+spec:
+  devices:
+    - model: "UniFi Switch 24 PoE"
+      subtype: "Switch (L2)"
+      generalInfo: "Managed Gigabit Layer 2 switch with 24 PoE ports and 2 SFP slots"
+      ports:
+        RJ45: 24
+        SFP: 2

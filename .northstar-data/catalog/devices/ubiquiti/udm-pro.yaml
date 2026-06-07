@@ -1,0 +1,13 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "Ubiquiti UniFi"
+  website: "https://ui.com"
+spec:
+  devices:
+    - model: "UniFi Dream Machine Pro"
+      subtype: "Router"
+      generalInfo: "Enterprise 1U security gateway and network appliance"
+      ports:
+        RJ45: 9
+        SFP+: 2

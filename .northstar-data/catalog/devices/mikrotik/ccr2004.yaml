@@ -1,0 +1,13 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "MikroTik"
+  website: "https://mikrotik.com"
+spec:
+  devices:
+    - model: "CCR2004-16G-2S+"
+      subtype: "Router"
+      generalInfo: "Industrial grade CCR router with 16x Gigabit ports and 2x 10G SFP+ ports"
+      ports:
+        RJ45: 16
+        SFP+: 2

@@ -1,0 +1,13 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "MikroTik"
+  website: "https://mikrotik.com"
+spec:
+  devices:
+    - model: "Cloud Router Switch CRS326-24G-2S+RM"
+      subtype: "Switch (L3)"
+      generalInfo: "SwitcheOS/RouterOS powered 24 port Gigabit Ethernet switch with two SFP+ ports"
+      ports:
+        RJ45: 24
+        SFP+: 2

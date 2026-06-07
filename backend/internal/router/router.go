@@ -85,6 +85,10 @@ func RegisterRoutes(e *echo.Echo) {
 	e.PUT("/api/devices/:device_id/", handlers.UpdateDeviceModel, pCatalogWrite)
 	e.DELETE("/api/devices/:device_id", handlers.DeleteDeviceModel, pCatalogWrite)
 	e.DELETE("/api/devices/:device_id/", handlers.DeleteDeviceModel, pCatalogWrite)
+	e.POST("/api/devices/catalog/sync", handlers.SyncHardwareCatalog, pCatalogWrite)
+	e.POST("/api/devices/catalog/sync/", handlers.SyncHardwareCatalog, pCatalogWrite)
+	e.GET("/api/devices/catalog", handlers.GetDeviceCatalog)
+	e.GET("/api/devices/catalog/", handlers.GetDeviceCatalog)
 
 	// Manufacturers & Categories auxiliary routes (Phase 2 Catalog Update)
 	e.GET("/api/manufacturers", handlers.ReadManufacturers)

@@ -337,6 +337,7 @@ type DeviceModel struct {
 	Categories     []Category   `gorm:"many2many:device_model_categories;" json:"categories"`
 	GeneralInfo    string       `json:"general_info"`
 	Subtype        string       `json:"subtype"` // e.g. "Switch (L3)", "Router", "Server", etc.
+	IsImported     bool         `gorm:"column:is_imported;default:false" json:"is_imported"`
 	Revision       int          `gorm:"default:1" json:"revision"`
 	Ports          JSONMap      `gorm:"type:text" json:"ports"`
 	CreatedAt      time.Time    `gorm:"autoCreateTime" json:"created_at"`
@@ -360,6 +361,7 @@ type DeviceModelRevision struct {
 	ModelName     string    `json:"model_name"`
 	GeneralInfo   string    `json:"general_info"`
 	Subtype       string    `json:"subtype"`
+	IsImported    bool      `gorm:"column:is_imported" json:"is_imported"`
 	Ports         JSONMap   `gorm:"type:text" json:"ports"`
 	CreatedAt     time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
