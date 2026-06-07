@@ -132,23 +132,23 @@
             </div>
           </div>
 
-          <!-- Card 6: Dynamic Categories & Icons Manager (Phase 1 Dynamic Categories) -->
+          <!-- Card Group: Equipment Catalog & Ingestion Hub -->
           <div 
             class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-5 flex flex-col justify-between h-52 shadow-sm hover:border-primary-500 transition-all cursor-pointer group"
-            @click="navigateToTab('categories')"
+            @click="navigateToTab('catalog')"
           >
             <div class="space-y-2">
               <div class="flex justify-between items-start">
-                <UIcon name="i-heroicons-squares-plus" class="h-8 w-8 text-primary-500" />
-                <span class="text-xs font-mono font-bold text-slate-400 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 rounded">
-                  {{ categories?.length || 0 }} Categories
+                <UIcon name="i-heroicons-rectangle-group" class="h-8 w-8 text-primary-500" />
+                <span class="text-[10px] font-mono font-bold text-primary-400 bg-primary-50 dark:bg-primary-950 px-2 py-0.5 rounded uppercase">
+                  Catalog Hub
                 </span>
               </div>
-              <h4 class="font-bold text-sm text-slate-900 dark:text-white font-mono group-hover:text-primary-500 transition-colors">Category & Icon Manager</h4>
-              <p class="text-xs text-slate-400 leading-normal line-clamp-2">Manage Asset Category cards, assign custom Heroicons styles dynamically, and link nested sub-group card portals.</p>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white font-mono group-hover:text-primary-500 transition-colors">Equipment Catalog & Ingest</h4>
+              <p class="text-xs text-slate-400 leading-normal line-clamp-2">Configure standard asset categories, pre-define standard port speeds, and execute bulk CSV hardware imports safely.</p>
             </div>
             <div class="flex justify-end pt-2">
-              <UButton size="xs" color="primary" variant="subtle" right-icon="i-heroicons-arrow-right">Manage Icons</UButton>
+              <UButton size="xs" color="primary" variant="subtle" right-icon="i-heroicons-arrow-right">Open Catalog Hub</UButton>
             </div>
           </div>
 
@@ -170,26 +170,6 @@
             <div class="flex justify-between items-center pt-2">
               <UButton size="xs" color="gray" variant="ghost" icon="i-heroicons-arrow-up-tray" @click.stop="triggerBackupRestore">Restore</UButton>
               <UButton size="xs" color="red" variant="subtle" right-icon="i-heroicons-arrow-down-tray">Download JSON</UButton>
-            </div>
-          </div>
-
-          <!-- Card 7: Bulk Ingest Engine (Phase 1 Bulk Importing) -->
-          <div 
-            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md p-5 flex flex-col justify-between h-52 shadow-sm hover:border-primary-500 transition-all cursor-pointer group"
-            @click="navigateToTab('importer')"
-          >
-            <div class="space-y-2">
-              <div class="flex justify-between items-start">
-                <UIcon name="i-heroicons-circle-stack" class="h-8 w-8 text-primary-500" />
-                <span class="text-[9px] font-mono font-bold text-primary-400 bg-primary-50 dark:bg-primary-950 px-2 py-0.5 rounded uppercase">
-                  Declarative
-                </span>
-              </div>
-              <h4 class="font-bold text-sm text-slate-900 dark:text-white font-mono group-hover:text-primary-500 transition-colors">Bulk Ingest Engine</h4>
-              <p class="text-xs text-slate-400 leading-normal line-clamp-2">Upload batch CSV hardware list manifests, execute dynamic GORM regex pattern validations, and perform bulk CMDB creations safely.</p>
-            </div>
-            <div class="flex justify-end pt-2">
-              <UButton size="xs" color="primary" variant="subtle" right-icon="i-heroicons-arrow-right">Bulk Ingest CSV</UButton>
             </div>
           </div>
 
@@ -729,20 +709,53 @@
               </UCard>
               </div>
 
-        <!-- Tab 6 Sub-Page: Standard Port Type Profiles -->
-        <div v-if="activeTab === 'interfaces'" class="space-y-6">
+        <!-- Unified Equipment Catalog & Ingest Hub -->
+        <div v-if="activeTab === 'catalog'" class="space-y-6">
           <UCard>
             <template #header>
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-bold font-mono text-slate-800 dark:text-white uppercase font-bold tracking-wide flex items-center gap-1.5">
-                  <UIcon name="i-heroicons-cpu-chip" class="h-4 w-4 text-primary-500" />
-                  Standard Interface Port Types & Speeds
-                </span>
-                <UButton size="xs" color="gray" variant="ghost" label="Back to Admin Panel" icon="i-heroicons-arrow-left" @click="backToHub" />
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-heroicons-rectangle-group" class="h-6 w-6 text-primary-500" />
+                  <h3 class="text-md font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wide">Equipment Catalog & Ingest Hub</h3>
+                </div>
+                <UButton size="xs" color="gray" variant="ghost" label="Back to Dashboard" icon="i-heroicons-arrow-left" @click="backToHub" />
               </div>
             </template>
 
-            <div class="space-y-6">
+            <!-- Nested Horizontal Tabs Switcher Row -->
+            <div class="border-b border-slate-200 dark:border-slate-800 pb-3 mb-6 flex flex-wrap gap-2">
+              <UButton 
+                v-for="t in catalogTabs" 
+                :key="t.key"
+                size="xs"
+                variant="solid"
+                :color="activeCatalogTab === t.key ? 'primary' : 'gray'"
+                class="font-mono text-xs font-semibold"
+                @click="activeCatalogTab = t.key"
+              >
+                <UIcon :name="t.icon" class="h-4 w-4 mr-1" />
+                {{ t.label }}
+              </UButton>
+            </div>
+
+            <!-- Inner Tab Content Viewport -->
+            <div class="min-h-0">
+
+              <!-- Inner Tab 2: Standard Interface Port Types -->
+              <div v-if="activeCatalogTab === 'interfaces'" class="space-y-6">
+                <div class="flex justify-end mb-4">
+                  <UButton 
+                    v-if="canMutate"
+                    size="xs" 
+                    color="primary" 
+                    icon="i-heroicons-arrow-path" 
+                    :loading="isSyncingCatalog"
+                    @click="syncHardwareCatalog"
+                  >
+                    Sync Hardware Catalog
+                  </UButton>
+                </div>
+
               <!-- Creator Card -->
               <UCard v-if="canMutate" class="bg-slate-50 dark:bg-slate-800/20 border-dashed">
                 <template #header>
@@ -801,20 +814,9 @@
                 </template>
               </UTable>
             </div>
-          </UCard>
-        </div>
 
-        <!-- Tab 7 Sub-Page: Bulk Ingest Engine (Phase 1 Bulk Importing & Cabling) -->
-        <div v-if="activeTab === 'importer'" class="space-y-6">
-          <UCard>
-            <template #header>
-              <div class="flex justify-between items-center text-xs">
-                <span class="font-bold font-mono text-slate-800 dark:text-white uppercase">Declarative CSV Ingest pipeline</span>
-                <UButton size="xs" color="gray" variant="ghost" label="Back to Dashboard" icon="i-heroicons-arrow-left" @click="backToHub" />
-              </div>
-            </template>
-
-            <div class="space-y-6">
+            <!-- Inner Tab 3: Bulk CSV Importer -->
+            <div v-if="activeCatalogTab === 'importer'" class="space-y-6">
               <!-- Sub-tab selector buttons inside Ingestion Engine -->
               <div class="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
                 <button
@@ -1013,11 +1015,9 @@
               </div>
 
             </div>
-          </UCard>
-        </div>
 
-              <!-- Tab 6 Sub-Page: Category & Icon Manager (Phase 1 Dynamic Categories) -->
-              <div v-if="activeTab === 'categories'" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <!-- Inner Tab 1: Category & Icon Manager -->
+            <div v-if="activeCatalogTab === 'categories'" class="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <!-- Left: Category & Subgroup Add Forms -->
               <div class="space-y-6">
               <!-- Create Category Card -->
@@ -1136,6 +1136,10 @@
               </UCard>
               </div>
               </div>
+
+            </div>
+          </UCard>
+        </div>
 
     </div>
 
@@ -1455,11 +1459,16 @@ const adminTabs = [
   { key: 'users', label: 'User Operator Policies', icon: 'i-heroicons-users', desc: 'Configure operator access permissions and manage policy overrides.' },
   { key: 'discovery', label: 'Subnet Sweeper & Cloud Sync', icon: 'i-heroicons-bolt', desc: 'Audit running standard services on localhost or crawl AWS cloud resources.' },
   { key: 'dcim', label: 'Datacenters & Racks (DCIM)', icon: 'i-heroicons-server', desc: 'Deploy physical datacenter location profiles, uplink connection speeds, and deploy cabinets.' },
-  { key: 'interfaces', label: 'Standard Interface Profiles', icon: 'i-heroicons-cpu-chip', desc: 'Pre-configure standard Network Interface Card (NIC) profiles, port speeds, and port counts to easily reuse across assets.' },
-  { key: 'importer', label: 'Bulk Ingest Engine', icon: 'i-heroicons-circle-stack', desc: 'Upload batch CSV hardware list manifests, execute dynamic GORM regex pattern validations, and perform bulk CMDB creations safely.' },
-  { key: 'categories', label: 'Category & Icon Manager', icon: 'i-heroicons-squares-plus', desc: 'Manage CMDB asset categories, assign custom Heroicons styles dynamically, and link nested sub-group card portals.' },
+  { key: 'catalog', label: 'Equipment Catalog & Ingest', icon: 'i-heroicons-rectangle-group', desc: 'Pre-configure asset categories, standard NIC interface port types, and perform bulk CSV imports recursively.' },
   { key: 'fields', label: 'Dynamic Custom Fields', icon: 'i-heroicons-tag', desc: 'Define user-defined dynamic meta-properties and schema validation requirements.' },
   { key: 'webhooks', label: 'Webhook Broadcasters', icon: 'i-heroicons-link', desc: 'Configure real-time outbound HTTP callback webhook targets for CMDB events.' }
+]
+
+const activeCatalogTab = ref('categories')
+const catalogTabs = [
+  { key: 'categories', label: 'Categories & Subgroups', icon: 'i-heroicons-squares-plus' },
+  { key: 'interfaces', label: 'Standard Interface NICs', icon: 'i-heroicons-cpu-chip' },
+  { key: 'importer', label: 'Bulk CSV Importer', icon: 'i-heroicons-circle-stack' }
 ]
 
 // ----------------------------------------
@@ -2303,6 +2312,23 @@ const removeProfile = async (id) => {
   } catch (err) {
     console.error('Failed to delete NIC profile:', err)
     alert('Delete failed.')
+  }
+}
+
+const isSyncingCatalog = ref(false)
+const syncHardwareCatalog = async () => {
+  isSyncingCatalog.value = true
+  try {
+    const res = await $fetch(`${apiBase}/devices/catalog/sync`, {
+      method: 'POST',
+      headers: getAuthHeader()
+    })
+    alert(`${res.message || 'Catalog synced.'} (Synced/Updated: ${res.synced_count} items)`)
+  } catch (err) {
+    console.error('Failed to sync hardware catalog:', err)
+    alert('Failed to sync hardware catalog. Check folder permissions.')
+  } finally {
+    isSyncingCatalog.value = false
   }
 }
 

@@ -56,35 +56,7 @@ func InitDB() (*gorm.DB, error) {
 		log.Printf("[OTel Engine] Warning: Failed to hook OpenTelemetry tracing onto GORM: %v", err)
 	}
 
-	log.Println("[Migration Engine] Applying automatic GORM schema AutoMigrate updates...")
-	// Automigrate DB schemas
-	err = db.AutoMigrate(
-		&models.Asset{},
-		&models.MaintenanceWindow{},
-		&models.PortTypeProfile{},
-		&models.NetworkInterface{},
-		&models.AuditLog{},
-		&models.AssetRelationship{},
-		&models.Manufacturer{},
-		&models.Category{},
-		&models.SubGroup{},
-		&models.DeviceModel{},
-		&models.DeviceModelRevision{},
-		&models.Permission{},
-		&models.Group{},
-		&models.User{},
-		&models.DatacenterType{},
-		&models.DatacenterFloor{},
-		&models.DatacenterWall{},
-		&models.Datacenter{},
-		&models.Rack{},
-		&models.LicenseAgreement{},
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 1: Trigger the Declarative Database Migration Engine Schema versioning (Phase 1)
+	// Step 1: Trigger versioned database migrations via Goose
 	err = RunMigrations(db)
 	if err != nil {
 		return nil, err
@@ -147,10 +119,19 @@ func InitDB() (*gorm.DB, error) {
 
 	// Bind Admin Relationships
 	var uAdmin models.User
-	if err := db.Where("username = ?", "admin").First(&uAdmin).Error; err == nil {
+	err = db.Where("username = ?", "admin").First(&uAdmin).Error
+	if err != nil && err == gorm.ErrRecordNotFound {
+		uAdmin = models.User{
+			Username: "admin",
+			Password: string(hashedAdmin),
+			Role:     "admin",
+		}
+		db.Create(&uAdmin)
+		log.Println("[Bootstrap Engine] Default Admin user auto-created cleanly.")
+	} else if err == nil {
 		db.Model(&uAdmin).Updates(models.User{Password: string(hashedAdmin), Role: "admin"})
-		db.Model(&uAdmin).Association("Permissions").Replace([]models.Permission{pWriteAsset, pDeleteAsset, pWriteCatalog})
 	}
+	db.Model(&uAdmin).Association("Permissions").Replace([]models.Permission{pWriteAsset, pDeleteAsset, pWriteCatalog})
 
 	// Bind Operator Relationships
 	var uOperator models.User

@@ -1,0 +1,13 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "MikroTik"
+  website: "https://mikrotik.com"
+spec:
+  devices:
+    - model: "CRS305-1G-4S+IN"
+      subtype: "Switch (L3)"
+      generalInfo: "Compact Layer 3 switch with four 10G SFP+ ports and one Gigabit Ethernet port"
+      ports:
+        RJ45: 1
+        SFP+: 4

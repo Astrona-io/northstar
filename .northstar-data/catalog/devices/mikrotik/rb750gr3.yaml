@@ -1,0 +1,12 @@
+apiVersion: catalog.astrona.io/v1alpha1
+kind: DeviceCatalog
+metadata:
+  manufacturer: "MikroTik"
+  website: "https://mikrotik.com"
+spec:
+  devices:
+    - model: "hEX (RB750Gr3)"
+      subtype: "Router"
+      generalInfo: "Five port Gigabit Ethernet router for locations where wireless connectivity is not required"
+      ports:
+        RJ45: 5

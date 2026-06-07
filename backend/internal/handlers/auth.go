@@ -108,6 +108,13 @@ func RBACMiddleware(permissionName string) echo.MiddlewareFunc {
 				return c.JSON(http.StatusUnauthorized, echo.Map{"error": "Invalid token claims"})
 			}
 
+			// Superuser Admin role bypass (Admins have global override access)
+			if claims.Role == "admin" {
+				c.Set("username", claims.Username)
+				c.Set("role", claims.Role)
+				return next(c)
+			}
+
 			// Fetch full User profile preloaded with Groups and Override Permissions (Phase 1 Advanced RBAC)
 			var user models.User
 			err = database.DB.Preload("Group.Permissions").Preload("Permissions").Where("username = ?", claims.Username).First(&user).Error
