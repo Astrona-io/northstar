@@ -1,0 +1,9 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "QSFP+ High-Speed Optical Port"
+spec:
+  type: "QSFP+"
+  speeds:
+    - "40 Gbps"
+    - "10 Gbps"

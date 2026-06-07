@@ -1,6 +1,13 @@
 <template>
   <UCard>
     <UTable :rows="assets || []" :columns="columns">
+      <template #id-data="{ row }">
+        <UTooltip :text="row.id" :popper="{ placement: 'top' }">
+          <span class="font-mono text-xs text-slate-500 cursor-help border-b border-dashed border-slate-300 dark:border-slate-700 pb-0.5">
+            ...{{ row.id.split('-').pop() }}
+          </span>
+        </UTooltip>
+      </template>
       <template #name-data="{ row }">
         <NuxtLink :to="`/assets/${row.id}`" class="text-primary-500 hover:text-primary-600 hover:underline font-medium">
           {{ row.name }}
@@ -51,7 +58,6 @@ const columns = [
   { key: 'name', label: 'Name' },
   { key: 'type', label: 'Type' },
   { key: 'location', label: 'Physical Location' }, // Phase 1 Location mapping column
-  { key: 'ip_address', label: 'IP Address' },
   { key: 'maintenance_status', label: 'Maintenance' },
   { key: 'status', label: 'Status' },
   { key: 'actions', label: 'Actions' }

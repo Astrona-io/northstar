@@ -1,0 +1,10 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "QSFP-DD Double-Density Port"
+spec:
+  type: "QSFP-DD"
+  speeds:
+    - "400 Gbps"
+    - "200 Gbps"
+    - "100 Gbps"

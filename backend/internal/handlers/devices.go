@@ -46,6 +46,7 @@ type DeviceModelCreateReq struct {
 	CategoryIDs    []string       `json:"category_ids"`
 	GeneralInfo    string         `json:"general_info"`
 	Ports          models.JSONMap `json:"ports"`
+	Subtype        string         `json:"subtype"`
 }
 
 // CreateDeviceModel handles POST /api/devices/
@@ -84,6 +85,7 @@ func CreateDeviceModel(c echo.Context) error {
 		ModelName:      req.ModelName,
 		Categories:     cats,
 		GeneralInfo:    req.GeneralInfo,
+		Subtype:        req.Subtype,
 		Revision:       1,
 		Ports:          req.Ports,
 	}
@@ -109,6 +111,7 @@ func saveOrUpdateRevisionRecord(db *gorm.DB, dm *models.DeviceModel) error {
 	if err == nil {
 		rev.ModelName = dm.ModelName
 		rev.GeneralInfo = dm.GeneralInfo
+		rev.Subtype = dm.Subtype
 		rev.Ports = dm.Ports
 		return db.Save(&rev).Error
 	}
@@ -117,6 +120,7 @@ func saveOrUpdateRevisionRecord(db *gorm.DB, dm *models.DeviceModel) error {
 		Revision:      dm.Revision,
 		ModelName:     dm.ModelName,
 		GeneralInfo:   dm.GeneralInfo,
+		Subtype:       dm.Subtype,
 		Ports:         dm.Ports,
 	}
 	return db.Create(&rev).Error
@@ -190,6 +194,14 @@ func UpdateDeviceModel(c echo.Context) error {
 		}
 	}
 
+	newSubtype := device.Subtype
+	if val, exists := body["subtype"]; exists {
+		if s, ok := val.(string); ok && s != device.Subtype {
+			newSubtype = s
+			hasChanges = true
+		}
+	}
+
 	newPorts := device.Ports
 	if val, exists := body["ports"]; exists {
 		portsMap := make(models.JSONMap)
@@ -218,6 +230,7 @@ func UpdateDeviceModel(c echo.Context) error {
 		device.ManufacturerID = newManufacturerID
 		device.ModelName = newModelName
 		device.GeneralInfo = newGeneralInfo
+		device.Subtype = newSubtype
 		device.Ports = newPorts
 
 		if err := database.DB.Save(&device).Error; err != nil {

@@ -136,6 +136,16 @@ func RegisterRoutes(e *echo.Echo) {
 	e.GET("/api/monitoring/ping", handlers.GetLatencyPing)
 	e.GET("/api/monitoring/ping/", handlers.GetLatencyPing)
 
+	// Standard Port Type Profiles (NIC port templates)
+	e.GET("/api/port-types", handlers.ReadPortTypeProfiles)
+	e.GET("/api/port-types/", handlers.ReadPortTypeProfiles)
+	e.POST("/api/port-types", handlers.CreatePortTypeProfile, pAssetWrite)
+	e.POST("/api/port-types/", handlers.CreatePortTypeProfile, pAssetWrite)
+	e.PUT("/api/port-types/:id", handlers.UpdatePortTypeProfile, pAssetWrite)
+	e.PUT("/api/port-types/:id/", handlers.UpdatePortTypeProfile, pAssetWrite)
+	e.DELETE("/api/port-types/:id", handlers.DeletePortTypeProfile, pAssetDelete)
+	e.DELETE("/api/port-types/:id/", handlers.DeletePortTypeProfile, pAssetDelete)
+
 	// Administrative License Agreement Routes (AGPLv3 Compliance)
 	e.GET("/api/license/status", handlers.GetLicenseStatus, pAssetWrite)
 	e.GET("/api/license/status/", handlers.GetLicenseStatus, pAssetWrite)

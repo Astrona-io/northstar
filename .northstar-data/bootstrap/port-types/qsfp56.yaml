@@ -1,0 +1,10 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "QSFP56 Next-Gen Optical Port"
+spec:
+  type: "QSFP56"
+  speeds:
+    - "200 Gbps"
+    - "100 Gbps"
+    - "50 Gbps"

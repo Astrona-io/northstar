@@ -135,10 +135,7 @@
         </UFormGroup>
         
         <div class="grid grid-cols-2 gap-4">
-          <UFormGroup label="IP Address">
-            <UInput v-model="form.ip_address" placeholder="192.168.1.1" />
-          </UFormGroup>
-          <UFormGroup label="Status">
+          <UFormGroup label="Status" class="col-span-2">
             <USelect v-model="form.status" :options="['active', 'inactive', 'maintenance']" required />
           </UFormGroup>
         </div>
@@ -653,6 +650,24 @@ const selectedDeviceModel = computed({
       if (!isEditing.value || !form.value.device_model_revision) {
         form.value.device_model_revision = val.revision || 1
       }
+      
+      // Dynamic Type & Subtype autofilling based on catalog hardware classification
+      if (val.subtype) {
+        const subtype = val.subtype
+        if (subtype === 'Switch (L2)' || subtype === 'Switch (L3)' || subtype === 'Router' || subtype === 'Access Point (AP)' || subtype === 'Firewall' || subtype === 'Load Balancer') {
+          form.value.type = 'Network'
+          form.value.properties.network_subtype = subtype
+        } else if (subtype === 'Server') {
+          form.value.type = 'Server'
+        } else if (subtype === 'Database') {
+          form.value.type = 'Database'
+        } else if (subtype === 'Industrial PLC' || subtype === 'Edge Gateway' || subtype === 'Smart IP Camera' || subtype === 'Environment Sensor') {
+          form.value.type = 'IoT / Edge'
+          form.value.properties.network_subtype = subtype
+        } else {
+          form.value.type = 'Other'
+        }
+      }
     } else {
       selectedDeviceModelId.value = null
       form.value.device_model_id = null
@@ -767,6 +782,27 @@ watch(() => props.modelValue, (isOpenVal) => {
     loadCurrentRelationships()
     loadCategoryCustomFields()
     loadDevicesCatalog()
+
+    // Explicitly reset form states and wizard step on consecutive creates
+    if (!props.asset) {
+      form.value = { 
+        name: '', 
+        type: 'Server', 
+        ip_address: '', 
+        status: 'active', 
+        description: '', 
+        properties: {},
+        rack_id: null,
+        rack_position_u: null,
+        host_asset_id: null,
+        container_image: '',
+        container_port_mapping: '',
+        device_model_id: null,
+        device_model_revision: null
+      }
+      selectedDeviceModelId.value = null
+      step.value = 1
+    }
   }
 })
 

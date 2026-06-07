@@ -25,6 +25,7 @@ func setupTestDB() {
 	db.AutoMigrate(
 		&models.Asset{},
 		&models.MaintenanceWindow{},
+		&models.PortTypeProfile{},
 		&models.NetworkInterface{},
 		&models.AuditLog{},
 		&models.AssetRelationship{},

@@ -1,0 +1,11 @@
+apiVersion: network.astrona.io/v1alpha1
+kind: PortType
+metadata:
+  name: "RJ45 Copper Interface"
+spec:
+  type: "RJ45"
+  speeds:
+    - "10 Gbps"
+    - "2.5 Gbps"
+    - "1 Gbps"
+    - "100 Mbps"

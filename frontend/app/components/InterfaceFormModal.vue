@@ -8,40 +8,30 @@
       </template>
       
       <form @submit.prevent="saveInterface" class="space-y-4">
-        <UFormGroup label="Interface Name">
-          <UInput v-model="form.name" placeholder="e.g. eth0, GigabitEthernet0/1" required />
-        </UFormGroup>
+        <div class="grid grid-cols-2 gap-4">
+          <UFormGroup label="Interface Name">
+            <UInput v-model="form.name" placeholder="e.g. NIC 1, Intel Quad-Port" required />
+          </UFormGroup>
+          <UFormGroup label="Interface Type">
+            <USelectMenu 
+              v-model="selectedProfile" 
+              :options="profiles" 
+              option-attribute="type" 
+              placeholder="Select port type..." 
+              required
+              class="w-full"
+            />
+          </UFormGroup>
+        </div>
         
         <div class="grid grid-cols-2 gap-4">
-          <UFormGroup label="Interface Type">
-            <USelect v-model="form.type" :options="['ethernet', 'management', 'console', 'sfp+', 'fiber']" required />
-          </UFormGroup>
           <UFormGroup label="Link Speed">
-            <UInput v-model="form.speed" placeholder="e.g. 1 Gbps, 10 Gbps" />
+            <USelect v-model="form.speed" :options="speedOptions" :disabled="!selectedProfile" placeholder="Select speed..." required />
+          </UFormGroup>
+          <UFormGroup label="Port Count (Interfaces on this NIC)">
+            <UInput type="number" v-model="form.port_count" placeholder="1" min="1" required />
           </UFormGroup>
         </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <UFormGroup label="IP Address">
-            <UInput v-model="form.ip_address" placeholder="e.g. 192.168.1.15" />
-          </UFormGroup>
-          <UFormGroup label="MAC Address">
-            <UInput v-model="form.mac_address" placeholder="e.g. 00:1A:2B:3C:4D:5E" />
-          </UFormGroup>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <UFormGroup label="VLAN">
-            <UInput v-model="form.vlan" placeholder="e.g. VLAN 100" />
-          </UFormGroup>
-          <UFormGroup label="MTU (Bytes)">
-            <UInput type="number" v-model="form.mtu" placeholder="1500" />
-          </UFormGroup>
-        </div>
-
-        <UFormGroup label="Initial Link Status">
-          <USelect v-model="form.status" :options="['up', 'down']" required />
-        </UFormGroup>
         
         <div class="flex justify-end gap-2 mt-4">
           <UButton color="gray" variant="ghost" @click="isOpen = false">Cancel</UButton>
@@ -53,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -73,9 +63,66 @@ const isOpen = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
+const runtimeConfig = useRuntimeConfig()
+const apiBase = runtimeConfig.public.apiBase
+
 const { createInterface } = useInterfaces()
 
 const isSaving = ref(false)
+const profiles = ref([])
+const selectedProfileId = ref(null)
+
+const loadInterfaceProfiles = async () => {
+  try {
+    const data = await $fetch(`${apiBase}/port-types`)
+    profiles.value = data || []
+  } catch (err) {
+    console.error('Failed to load standard interface profiles:', err)
+  }
+}
+
+watch(() => props.modelValue, (isOpenVal) => {
+  if (isOpenVal) {
+    loadInterfaceProfiles()
+    selectedProfileId.value = null
+  }
+})
+
+const speedOptions = computed(() => {
+  if (!selectedProfile.value) return []
+  try {
+    return JSON.parse(selectedProfile.value.speeds) || []
+  } catch (err) {
+    return []
+  }
+})
+
+const selectedProfile = computed({
+  get: () => {
+    if (!selectedProfileId.value || profiles.value.length === 0) return null
+    return profiles.value.find(p => p.id === selectedProfileId.value) || null
+  },
+  set: (val) => {
+    if (val) {
+      selectedProfileId.value = val.id
+      form.value.type = val.type
+      try {
+        const speeds = JSON.parse(val.speeds)
+        if (speeds && speeds.length > 0) {
+          form.value.speed = speeds[0]
+        } else {
+          form.value.speed = ''
+        }
+      } catch (err) {
+        form.value.speed = ''
+      }
+    } else {
+      selectedProfileId.value = null
+      form.value.type = 'ethernet'
+      form.value.speed = '1 Gbps'
+    }
+  }
+})
 
 const form = ref({
   name: '',
@@ -85,7 +132,8 @@ const form = ref({
   mac_address: '',
   vlan: '',
   mtu: 1500,
-  status: 'up'
+  status: 'up',
+  port_count: 1
 })
 
 const saveInterface = async () => {
@@ -93,7 +141,9 @@ const saveInterface = async () => {
   try {
     const payload = {
       ...form.value,
-      mtu: Number(form.value.mtu) || 1500
+      nic_name: form.value.name,
+      mtu: Number(form.value.mtu) || 1500,
+      port_count: Number(form.value.port_count) || 1
     }
     await createInterface(props.assetId, payload)
     isOpen.value = false
@@ -105,7 +155,8 @@ const saveInterface = async () => {
       mac_address: '',
       vlan: '',
       mtu: 1500,
-      status: 'up'
+      status: 'up',
+      port_count: 1
     }
     emit('saved')
   } catch (error) {
